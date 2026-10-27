@@ -18,7 +18,7 @@ PUBLIC = [
     '.gitignore', '.gitattributes', '.github/workflows/checks.yml', '启动MADAutoScript.cmd',
     '.github/ISSUE_TEMPLATE/bug_report.md', '.github/ISSUE_TEMPLATE/feature_request.md',
     '.github/pull_request_template.md', 'docs/STARTER_TASKS.md',
-    'docs/ocr-runtime.lock.json', 'docs/STATUS.md', 'docs/RELEASING.md', 'docs/PRIVACY.md',
+    'docs/ocr-runtime.lock.json', 'docs/STATUS.md', 'docs/RELEASING.md',
     'scripts/install_ocr.py', 'scripts/build_release.py', 'scripts/vendor_sources.py',
     'scripts/check_install.py', 'tests/test_shop_and_picker.py',
     'tests/test_ui_workspace.py', 'tests/test_release_core.py', 'tests/test_release_privacy.py',
@@ -45,12 +45,14 @@ def assert_no_private_paths(folder, roots):
     """Check raw, JSON-escaped and URI paths, including strings in runtime binaries."""
     markers = set()
     for root in roots:
-        root = Path(root).resolve()
-        for value in (str(root), root.as_posix(), root.as_uri()):
-            for variant in (value, json.dumps(value, ensure_ascii=False)[1:-1],
-                            json.dumps(value, ensure_ascii=True)[1:-1]):
-                for encoding in ('utf-8', 'utf-16le'):
-                    markers.add(variant.encode(encoding).lower())
+        original = Path(root).absolute()
+        # resolve() expands Windows short paths; captures may retain their spelling.
+        for candidate in {original, original.resolve()}:
+            for value in (str(candidate), candidate.as_posix(), candidate.as_uri()):
+                for variant in (value, json.dumps(value, ensure_ascii=False)[1:-1],
+                                json.dumps(value, ensure_ascii=True)[1:-1]):
+                    for encoding in ('utf-8', 'utf-16le'):
+                        markers.add(variant.encode(encoding).lower())
     overlap = max(map(len, markers)) - 1
     for path in folder.rglob('*'):
         if not path.is_file(): continue

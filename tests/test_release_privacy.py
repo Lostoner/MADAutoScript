@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.build_release import assert_no_private_paths, public_catalog
 
@@ -37,6 +38,22 @@ class ReleasePrivacyTests(unittest.TestCase):
                 assert_no_private_paths(published, [private])
             probe.write_text('src/game_catalog.json\nhttps://github.com/\n', encoding='utf-8')
             assert_no_private_paths(published, [private])
+
+    def test_original_path_survives_resolution_to_another_spelling(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = root/'SHORT~1'
+            resolved = root/'expanded directory'
+            published = root/'release'
+            published.mkdir()
+            probe = published/'probe.dat'
+            # Model an 8.3 path supplied by TEMP, expanded by Path.resolve().
+            with patch.object(Path, 'resolve', return_value=resolved):
+                for spelling in (original, resolved):
+                    with self.subTest(spelling=spelling):
+                        probe.write_text(str(spelling/'evidence.json'), encoding='utf-8')
+                        with self.assertRaisesRegex(RuntimeError, 'probe.dat'):
+                            assert_no_private_paths(published, [original])
 
 
 if __name__ == '__main__':
