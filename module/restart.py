@@ -2,6 +2,7 @@
 import time
 from core import picture
 from core.mad_features import HOME_ENTRIES, STAGE_ENTRIES
+from core.exception import GameDayChanged
 
 def implement(self):
     if self.connection.get_current_package()!=self.package_name:
@@ -37,13 +38,15 @@ def deal_with_popup(self):
         close=next((r['point'] for r in rows if r['text'] in ('X','×','x') and r['point'][0]>950 and r['point'][1]<180),None)
         if close: self.click(*close); return True
     if any(w in text for w in ('日期变更','日期已变更','日期发生变更','日期已更改','日期已经变更','每日重置')):
-        if not self.date_popup_handled:
-            self.daily_config_refresh(force=True)
-            self.date_popup_handled=True
+        first_seen=not self.date_popup_handled
+        self.date_popup_handled=True
         confirm=next((r['point'] for r in rows if r['text'] in ('确认','确定','重新登录','重新开始') and r['point'][1]>300),None)
         if confirm: self.click(*confirm)
         else:
             self.connection.close_current_app(); self.connection.start_game()
+        # Unwind the old plan before refreshing. solve resumes from saved
+        # progress after login; a repeated dialog cannot clear it again.
+        if first_seen: raise GameDayChanged()
         return True
     if 'TOUCHTOSTART' in text.upper() or '点击屏幕开始' in text or '点击开始' in text:
         self.click(640,590); return True

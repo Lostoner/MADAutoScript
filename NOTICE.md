@@ -1,6 +1,6 @@
 # 来源、修改与致谢
 
-适用版本：MADAutoScript 0.7.4；更新日期：2026-10-27。应用源码采用 [GPL-3.0-only](LICENSE)。本文件记录实际来源及感谢对象，不替代各组件的完整许可条款。
+适用版本：MADAutoScript 0.7.5；更新日期：2026-10-28。应用源码采用 [GPL-3.0-only](LICENSE)。本文件记录实际来源及感谢对象，不替代各组件的完整许可条款。
 
 ## 应用代码与执行能力
 
@@ -23,7 +23,7 @@ MADAutoScript 贡献者自 2026-10-22 起加入 MAD ONEstore 的页面识别、�
 
 **MaaBd2（Maa-Assistant-Browndust2）** — 感谢 [alkaidjin/Maa-Assistant-Browndust2](https://github.com/alkaidjin/Maa-Assistant-Browndust2) 及贡献者。参考包为 v26.10.8，参考内容为任务卡片、参数展开、状态布局与字体观感。当前 MAD 界面使用原有 PyQt5/Fluent Widgets 技术栈实现，未引入 MaaBd2 或其 MXU 前端的源码、可执行文件、字体或图片。本项为设计参考致谢，不是运行依赖，也不据此将其 AGPLv3 声明为本应用许可证。
 
-**MaaFramework** — 感谢 [MaaXYZ/MaaFramework](https://github.com/MaaXYZ/MaaFramework) 的公开文档，曾用于评估后续执行框架方案。0.7.4 未调用或分发 MaaFramework，不应标注为“Powered by MaaFramework”。迁移现已暂缓；本发布继续维护现有 BAAS 派生执行链。
+**MaaFramework** — 感谢 [MaaXYZ/MaaFramework](https://github.com/MaaXYZ/MaaFramework) 的公开文档，曾用于评估后续执行框架方案。0.7.5 未调用或分发 MaaFramework，不应标注为“Powered by MaaFramework”。迁移现已暂缓；本发布继续维护现有 BAAS 派生执行链。
 
 如以后实际引入这些项目的实现，需在引入时记录具体文件、版本与适用许可，更新依赖和分发资料；当前致谢不构成未来使用的额外授权。
 

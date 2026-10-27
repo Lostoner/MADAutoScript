@@ -3,9 +3,8 @@
 Upstream 1110e88df5955df277737ea9717869b9ca88362b, GPL-3.0-only.
 """
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 import json
 import logging
 import re
@@ -16,9 +15,9 @@ import uuid
 import cv2
 from core.config.repository import ProfileRepository
 from core.config.config_set import ConfigSet
-from core.scheduler import Scheduler
+from core.scheduler import Scheduler, daily_reset_timestamp
 from core.tasks import TASKS, function_table
-from core.exception import FunctionCallTimeout, PackageIncorrect, RequestHumanTakeOver
+from core.exception import FunctionCallTimeout, PackageIncorrect, RequestHumanTakeOver, GameDayChanged
 from core.device.runtime import RunControl
 from core.device.connection import Connection
 from core.device.Control import Control
@@ -126,6 +125,8 @@ class MadThread:
             self.emit('queue','',tasks=[e['event_name'] for e in once] if once is not None else [])
             idle_home=False
             while self.flag_run:
+                # Check while waiting too, before selecting the next due task.
+                self.daily_config_refresh()
                 if once is not None:
                     event=once.pop(0) if once else None
                     task=self.scheduler.expand(event) if event else None
@@ -140,7 +141,6 @@ class MadThread:
                     continue
                 idle_home=False
                 self._state('running')
-                self.daily_config_refresh()
                 current_next_time=0
                 for activity in [*task['pre_task'],task['current_task'],*task['post_task']]:
                     self.guard.check()
@@ -154,7 +154,8 @@ class MadThread:
                     self.guard.check()
                     result={'task_id':activity,'status':'SUCCESS','reason':self.task_details.get('reason',title+'处理完成。'),**self.task_details}
                     results.append(result)
-                    self.emit('task',result['reason'],task_id=activity,state='succeeded',result='SUCCESS')
+                    task_state={'SKIPPED':'skipped','PARTIAL':'partial'}.get(result['status'],'succeeded')
+                    self.emit('task',result['reason'],task_id=activity,state=task_state,result=result['status'])
                     if activity==task['current_task']: current_next_time=self.next_time
                 self.scheduler.systole(task['current_task'],current_next_time,force_task=True)
             terminal='succeeded' if self.flag_run else 'stopped'
@@ -175,16 +176,20 @@ class MadThread:
                 atomic_json(self.run_dir/'result.json',self.last_result)
                 atomic_json(self.repository.data_root/'state'/self.repository.profile_id/'last-run.json',self.last_result)
             except OSError as exc: self.logger.warning('运行摘要写入失败：'+str(exc))
-            self.emit('result','单轮执行完成。' if terminal=='succeeded' else '已停止。' if terminal=='stopped' else '执行失败，请查看日志。',state=terminal,result=self.last_result,error=self.error)
+            self.emit('result','本轮执行结束。' if terminal=='succeeded' else '已停止。' if terminal=='stopped' else '执行失败，请查看日志。',state=terminal,result=self.last_result,error=self.error)
             self._state(terminal)
             self.logger.removeHandler(logfile)
             logfile.close()
 
     def solve(self,activity):
-        # BAAS Baas_thread.py:529-552. Only these two exceptions recover.
+        # BAAS Baas_thread.py:529-552 recovery, plus MAD's date-change dialog.
         for attempt in range(3):
             if attempt: self.logger.info('Retry Task %s %s',activity,attempt)
             try: return self.func_dict[activity](self)
+            except GameDayChanged:
+                self.to_main_page()
+                self.daily_config_refresh()
+                self.task_details={}
             except FunctionCallTimeout:
                 if not self.deal_with_func_call_timeout(): return False
             except PackageIncorrect as exc:
@@ -223,14 +228,12 @@ class MadThread:
         reset=config['scheduling']['reset']
         now=time.time() if now is None else now
         if not force:
-            if not reset['enabled'] or not reset.get('reset_at'): return False
-            parts=[int(v) for v in reset['reset_at'].split(':')]
-            seconds=parts[0]*3600+parts[1]*60+(parts[2] if len(parts)>2 else 0)
-            zone=ZoneInfo(reset['server_timezone'])
-            day=lambda ts:(datetime.fromtimestamp(ts,zone)-timedelta(seconds=seconds)).date()
-            if day(now)==day(config['last_refresh_config_time']): return False
-        self.repository.reset_progress(now)
-        self.logger.info('服务器日切：已从用户计划刷新未完成任务。')
+            boundary=daily_reset_timestamp(reset,now)
+            if boundary is None or config['last_refresh_config_time']>=boundary: return False
+        self.repository.reset_progress(now,reset_schedule=True)
+        message='服务器日切：已按配置重建每日关卡计划，任务重新到期。'
+        self.logger.info(message)
+        self.emit('notice',message)
         return True
 
     def update_screenshot_array(self):

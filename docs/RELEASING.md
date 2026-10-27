@@ -6,7 +6,7 @@
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\vendor_sources.py
-.\.venv\Scripts\python.exe scripts\build_release.py --output dist\v0.7.4
+.\.venv\Scripts\python.exe scripts\build_release.py --output dist\v0.7.5
 ```
 
 构建器以入口的实际导入关系挑选 MAD 代码，排除只供类型检查的 BAAS 旧运行时；资源和维护脚本采用显式清单。不会拷贝开发目录的 `.git`、配置、进度、日志、截图、备份或其他游戏。
@@ -22,9 +22,9 @@
 ## 输出
 
 - `source/MADAutoScript/`：可直接作为新 GitHub 仓库根目录。
-- `MADAutoScript-0.7.4-source.zip`：同一份应用源码快照。
-- `MADAutoScript-0.7.4-windows-x64.zip`：含 Python、依赖和 OCR 的便携版。
-- `MADAutoScript-0.7.4-third-party-sources.zip`：随二进制分发的对应第三方源码。
+- `MADAutoScript-0.7.5-source.zip`：同一份应用源码快照。
+- `MADAutoScript-0.7.5-windows-x64.zip`：含 Python、依赖和 OCR 的便携版。
+- `MADAutoScript-0.7.5-third-party-sources.zip`：随二进制分发的对应第三方源码。
 - `SHA256SUMS.txt`：上述归档的校验和。
 
 产物目录必须是新目录，避免把旧发布内容混入新版本。应用源码公开包不包含 Python/Qt/OCR 二进制。
@@ -40,7 +40,7 @@
 ## 发布到 GitHub
 
 1. 将 `source/MADAutoScript/` 的内容上传到为本项目新建的仓库，包括隐藏的 `.github/` 目录；不要把整个开发工作区或原有上游历史仓库推送过去。
-2. 以 `v0.7.4` 创建 Release，采用 `CHANGELOG.md` 中该版本的说明。
+2. 以 `v0.7.5` 创建 Release，采用 `CHANGELOG.md` 中该版本的说明。
 3. 同时上传三个 ZIP 和 `SHA256SUMS.txt`，让便携版与对应源码在同一个 Release 可下载。
 4. 下载发布产物，按校验和验证完整性。Windows 用户下载 `windows-x64.zip`；源码与第三方源码供开发、审计及再分发使用。
 

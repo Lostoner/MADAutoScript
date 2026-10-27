@@ -6,7 +6,7 @@ defaults from commit 1110e88df5955df277737ea9717869b9ca88362b.
 from core.tasks import TASKS
 from core.routine_catalog import default_routine
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def default_config(profile_id: str = "default") -> dict:
@@ -32,7 +32,7 @@ def default_config(profile_id: str = "default") -> dict:
         "routine": default_routine(),
         "unfinished_tasks": {}, "last_refresh_config_time": 0,
         "scheduling": {"timezone": "Asia/Hong_Kong",
-                       "reset": {"enabled": False, "server_timezone": "UTC", "reset_at": None}},
+                       "reset": {"enabled": True, "server_timezone": "Asia/Hong_Kong", "reset_at": "04:00"}},
     }
 
 

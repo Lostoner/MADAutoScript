@@ -6,7 +6,7 @@ from core.paths import REPO_ROOT
 from core.config import ProfileRepository
 from core.tasks import TASKS
 
-APP_VERSION='0.7.4'
+APP_VERSION='0.7.5'
 UPSTREAM_COMMIT='1110e88df5955df277737ea9717869b9ca88362b'
 
 class Main:

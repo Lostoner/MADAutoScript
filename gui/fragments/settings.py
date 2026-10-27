@@ -81,7 +81,7 @@ class SettingsFragment(ScrollArea):
         self.reset_zone=ComboBox(self)
         self.reset_zone.addItems(['UTC','Asia/Seoul','Asia/Hong_Kong'])
         self._add_row(form,'服务器时区',self.reset_zone)
-        self.reset_note=QLabel('日切时刻尚未核实时保持关闭；单轮仍可正常续跑。持续任务的到期时间在“调度”配置。',self)
+        self.reset_note=QLabel('ONEstore 国际服默认北京时间 04:00。开启后跨日重建计划并使任务到期；同一游戏日保留断点。关闭后需手动开始新一轮。',self)
         self.reset_note.setWordWrap(True)
         self._add_row(form,'日切状态',self.reset_note)
         self.theme_combo = ComboBox(self)

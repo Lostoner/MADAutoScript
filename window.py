@@ -160,9 +160,11 @@ class Window(QMainWindow):
         elif event['kind'] == 'result':
             self._last_run_dir = event['result'].get('run_dir')
             self._set_state(event['state'])
-            remaining = sum(len(v) for v in self.repository.load_config()['unfinished_tasks'].values())
-            message = f'本轮结束，{remaining} 个关卡保留待续。' if remaining else '本轮结束。'
-            self.homeInterface.on_log_received('INFO', message)
+            unfinished = self.repository.load_config()['unfinished_tasks']
+            handled = {item['task_id'] for item in event['result'].get('tasks', [])}
+            remaining = sum(len(unfinished.get(task, [])) for task in handled)
+            if remaining:
+                self.homeInterface.on_log_received('INFO', f'本次执行的任务还有 {remaining} 个关卡保留待续。')
         if self._closing: self._finish_close()
 
     def _open_records(self):

@@ -8,6 +8,17 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from core.config.repository import ProfileRepository
 
+def daily_reset_timestamp(reset,now,*,upcoming=False):
+    """Shared server-day boundary for progress and the existing event clock."""
+    if not reset['enabled'] or not reset.get('reset_at'): return None
+    parts=[int(v) for v in reset['reset_at'].split(':')]
+    current=datetime.fromtimestamp(now,ZoneInfo(reset['server_timezone']))
+    boundary=current.replace(hour=parts[0],minute=parts[1],second=parts[2] if len(parts)>2 else 0,microsecond=0)
+    if upcoming:
+        if boundary<=current: boundary+=timedelta(days=1)
+    elif boundary>current: boundary-=timedelta(days=1)
+    return boundary.timestamp()
+
 class Scheduler:
     def __init__(self,update_signal=None,path=None,*,repository=None,clock=time.time):
         self.repository=repository or ProfileRepository(path)
@@ -77,6 +88,8 @@ class Scheduler:
                 reset=utc.replace(hour=h,minute=m,second=s,microsecond=0)
                 if reset.timestamp()<=now: reset+=timedelta(days=1)
                 tick=min(tick,reset.timestamp())
+            boundary=daily_reset_timestamp(self.repository.load_config()['scheduling']['reset'],now,upcoming=True)
+            if boundary is not None: tick=min(tick,boundary)
         self.repository.save_events([{'func_name':task_name,'next_tick':int(tick)}],fields={'next_tick'})
         return tick
 

@@ -152,6 +152,15 @@ class ProfileRepository:
             raw['last_refresh_config_time']=time.time()
             atomic_json(self.config_path,raw)
         if not self.event_path.exists(): self._write_events(default_events())
+        # Older MAD profiles left the unverified reset time empty. Fill that
+        # placeholder only; explicit clocks/switches and current progress stay.
+        if raw.get('schema_version',0)<SCHEMA_VERSION:
+            reset=raw.get('scheduling',{}).get('reset',{})
+            if not reset.get('reset_at') and not reset.get('enabled'):
+                raw.setdefault('scheduling',{})['reset']=deepcopy(defaults['scheduling']['reset'])
+            raw['schema_version']=SCHEMA_VERSION
+            raw['revision']=raw.get('revision',0)+1
+            atomic_json(self.config_path,raw)
         return _merge(defaults,raw)
 
     def load_config(self):
@@ -194,11 +203,16 @@ class ProfileRepository:
             config['unfinished_tasks'][task]=remaining
             atomic_json(self.config_path,config)
 
-    def reset_progress(self,when=None):
+    def reset_progress(self,when=None,*,reset_schedule=False):
         with lock:
             config=self._ensure()
             config['unfinished_tasks']=_remaining(config['routine'])
             config['last_refresh_config_time']=time.time() if when is None else when
+            if reset_schedule:
+                events=self.load_events()
+                for event in events:
+                    event['next_tick']=min(event['next_tick'],int(config['last_refresh_config_time']))
+                self._write_events(events)
             atomic_json(self.config_path,config)
             return config
 
@@ -240,6 +254,6 @@ class AppSettingsRepository:
         with lock:
             result=_merge(self.load(),snapshot)
             if result['ui']['theme'] not in ('system','light','dark'): raise ConfigValidationError('未知主题')
-            result['schema_version']=4
+            result['schema_version']=SCHEMA_VERSION
             atomic_json(self.path,result)
             return result

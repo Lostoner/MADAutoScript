@@ -1,6 +1,6 @@
 [project]
 name = "mad-auto-script"
-version = "0.7.4"
+version = "0.7.5"
 description = "MADAutoScript: independent BAAS-derived desktop framework for MAke Drama MAD"
 requires-python = ">=3.11,<3.12"
 readme = "README.md"

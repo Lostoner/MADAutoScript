@@ -101,3 +101,61 @@ class WorkspaceAcceptance(TestCase):
         self.assertFalse(w.homeInterface.preview_image.pixmap().isNull())
         worker.update_screenshot_array.assert_not_called()
         w.homeInterface.preview_toggle.setChecked(False)
+
+    def test_skipped_and_partial_sweeps_keep_reasons_in_brief_log(self):
+        from core.Mad_thread import MadThread
+        from module import sweep_utils
+        routine=deepcopy(self.repo.load_config()['routine'])
+        routine['normal_sweep']['plans']=[{'stage_id':'normal:4-5','count':2}]
+        self.repo.patch_config({'routine':routine})
+        self.repo.set_unfinished('mad.normal_sweep',[])
+        self.repo.set_unfinished('mad.flara_sweep',[{'stage_id':'flara:热情的锻炼场:1','count':6}])
+        self.repo.save_events([{'func_name':e['func_name'],'enabled':e['func_name']=='mad.normal_sweep'}
+                              for e in self.repo.load_events()],fields={'enabled'})
+        worker=MadThread(self.repo,self.window._on_runtime_event)
+        worker.connect=Mock()
+        worker.to_main_page=Mock()
+        worker.func_dict['restart']=Mock(return_value=True)
+        worker.template=Mock(return_value=True)
+        self.window.runtime.worker=worker
+        def run():
+            worker.flag_run=True
+            worker.thread_starter()
+            self.assertIsNone(worker.last_result['error'])
+            return worker.last_result['tasks'][0]
+        with patch.object(sweep_utils,'enter') as enter:
+            result=run()
+        enter.assert_not_called()
+        self.assertEqual(result['status'],'SKIPPED')
+        self.assertEqual(result['completed'],0)
+        self.assertEqual(worker.last_result['device_actions'],0)
+        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'已跳过')
+        reason=result['reason']
+        for mode in (0,1,0):
+            self.window.homeInterface.log_mode.setCurrentIndex(mode)
+            self.assertEqual(self.window.homeInterface.logger_box.toPlainText().count(reason),1)
+            self.assertNotIn('个关卡保留待续',self.window.homeInterface.logger_box.toPlainText())
+
+        self.repo.reset_progress()
+        with patch('module.normal_sweep.navigate'), patch.object(sweep_utils,'enter'), patch.object(sweep_utils,'select_stage',return_value=True), \
+             patch.object(sweep_utils,'start_sweep',return_value=(False,0)):
+            result=run()
+        self.assertEqual(result['status'],'PARTIAL')
+        self.assertEqual(result['completed'],0)
+        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'待续 · 剩余 2 次')
+        self.assertIn(result['reason'],self.window.homeInterface.logger_box.toPlainText())
+        with patch('module.normal_sweep.navigate'), patch.object(sweep_utils,'enter'), patch.object(sweep_utils,'select_stage',return_value=True), \
+             patch.object(sweep_utils,'start_sweep',return_value=(True,2)), patch.object(sweep_utils,'return_to_list'):
+            result=run()
+        self.assertEqual(result['status'],'SUCCESS')
+        self.assertEqual(result['completed'],2)
+        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'完成')
+
+        routine['normal_sweep']['plans']=[]
+        self.repo.patch_config({'routine':routine})
+        with patch.object(sweep_utils,'enter') as enter:
+            result=run()
+        enter.assert_not_called()
+        self.assertEqual(result['status'],'SKIPPED')
+        self.assertIn('未配置关卡',result['reason'])
+        self.assertIn(result['reason'],self.window.homeInterface.logger_box.toPlainText())

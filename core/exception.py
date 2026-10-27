@@ -55,6 +55,9 @@ class OcrInternalError(Exception):
         self.message = message
         super().__init__(self.message)
 
+class GameDayChanged(Exception):
+    """The date-change dialog ended the current task's old-day context."""
+
 
 class LogTraceback:
     def __init__(self, title=None, message=None, context=None):

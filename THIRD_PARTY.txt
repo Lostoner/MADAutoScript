@@ -1,4 +1,4 @@
-MADAutoScript 0.7.4 third-party components — 2026-10-27
+MADAutoScript 0.7.5 third-party components — 2026-10-28
 
 Application code: GPL-3.0-only. See LICENSE and UPSTREAM.txt.
 The Python source application remains editable in the portable release.

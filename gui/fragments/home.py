@@ -213,7 +213,11 @@ class HomeFragment(QFrame):
     def on_log_received(self, level, message, important=True):
         if not message: return
         entry = (datetime.now().strftime('%H:%M:%S'), level, str(message), important)
-        if self.entries and self.entries[-1][1:3] == entry[1:3]: return
+        if self.entries and self.entries[-1][1:3] == entry[1:3]:
+            if important and not self.entries[-1][3]:
+                self.entries[-1] = entry
+                self._render_logs()
+            return
         self.entries.append(entry)
         if important or level in ('WARNING', 'ERROR', 'CRITICAL') or self.log_mode.currentIndex(): self._append_log(entry)
 

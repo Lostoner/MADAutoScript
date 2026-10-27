@@ -446,8 +446,8 @@ class RoutineFragment(ScrollArea):
             state = event.get('state')
             self._active = task if state == 'running' else None
             self.base_config['unfinished_tasks'] = self.repository.load_config()['unfinished_tasks']
-            text = {'running': '执行中', 'succeeded': '完成', 'needs_attention': '需处理', 'failed': '失败', 'stopped': '已停止'}.get(state, '')
-            if state == 'succeeded': text = self.remaining_text(self.base_config['unfinished_tasks'].get(task, [])) or text
+            text = {'running': '执行中', 'succeeded': '完成', 'skipped': '已跳过', 'partial': '待续', 'needs_attention': '需处理', 'failed': '失败', 'stopped': '已停止'}.get(state, '')
+            if state in ('succeeded', 'partial'): text = self.remaining_text(self.base_config['unfinished_tasks'].get(task, [])) or text
             self._results[task] = (text, event.get('message', ''))
         elif kind == 'result':
             names = {'SUCCESS': '完成', 'NOTHING_TO_CLAIM': '无可领', 'SKIPPED': '已跳过', 'PARTIAL': '待续', 'FAILED': '未完成', 'NEEDS_ATTENTION': '需处理', 'STOPPED': '已停止'}
