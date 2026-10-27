@@ -1,0 +1,29 @@
+[project]
+name = "mad-auto-script"
+version = "0.7.4"
+description = "MADAutoScript: independent BAAS-derived desktop framework for MAke Drama MAD"
+requires-python = ">=3.11,<3.12"
+readme = "README.md"
+license = { text = "GPL-3.0-only" }
+dynamic = ["dependencies"]
+
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.in"] }
+
+[tool.setuptools]
+py-modules = ["main", "window"]
+
+[tool.setuptools.packages.find]
+include = ["core*", "gui*", "module*"]
+
+[project.scripts]
+mad-auto-script = "main:main"
+
+[tool.mad]
+milestone = "BAAS-P1-P4"
+upstream_repository = "https://github.com/pur1fying/blue_archive_auto_script"
+upstream_commit = "1110e88df5955df277737ea9717869b9ca88362b"

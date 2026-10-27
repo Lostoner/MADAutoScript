@@ -1,0 +1,12 @@
+# MADAutoScript M0. Selected BAAS versions are preserved; all transitives locked separately.
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.2
+PyQt-Fluent-Widgets==1.2.0
+numpy==1.26.4
+opencv-python==4.8.1.78
+adbutils==2.2.1
+# adbutils 2.2.1 imports pkg_resources; keep the providing setuptools release.
+setuptools==80.9.0
+requests>=2.31,<3
+# Windows does not supply the IANA timezone database needed by zoneinfo.
+tzdata>=2025.2

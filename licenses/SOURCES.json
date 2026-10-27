@@ -1,0 +1,54 @@
+[
+  {
+    "file": "apkutils2-1.0.0-MIT.txt",
+    "package": "apkutils2",
+    "version": "1.0.0",
+    "source": "https://github.com/codeskyblue/apkutils2/blob/ee957bbe2451a34a6d0311c12cef44321c615234/LICENSE",
+    "git_blob_sha": "48fae7c2af3fb5877041ea08b77d959b6da10141",
+    "note": "Original upstream license; supplement omitted wheel text.",
+    "sha256": "ba3c606702195ea92224e1b8d160c9178fb2f6c8af12e04866ffa3e60c24b76a"
+  },
+  {
+    "file": "cigam-0.0.3-MIT.txt",
+    "package": "cigam",
+    "version": "0.0.3",
+    "source": "https://github.com/kin9-0rz/cigam/blob/eefbdcc40bba41e895894ef335ff1f2fb72db88f/LICENSE",
+    "git_blob_sha": "3a2fe170ceb566929e29ea9ea608358ff195dee3",
+    "note": "Original upstream license; supplement omitted wheel text.",
+    "sha256": "48790abb4d2507da29892c1e9ee200d51ffbc744bc8c1ccf075725b273a6920f"
+  },
+  {
+    "file": "retry-0.9.2-NOTICE.txt",
+    "package": "retry",
+    "version": "0.9.2",
+    "source": "https://github.com/invl/retry/blob/17312bdc11dadc207709470f2f56cb4f1ee5b0c9/LICENSE",
+    "git_blob_sha": "3a2cc3260e9b70de374f639e083027d4d0a1e0e9",
+    "note": "Original upstream license; supplement omitted wheel text.",
+    "sha256": "56a03398afe087933f43390608a782480db1b11626ac8d795e697a838ebd12c0"
+  },
+  {
+    "file": "PyQt5-5.15.11-GPL.txt",
+    "package": "PyQt5",
+    "version": "5.15.11",
+    "source": "https://files.pythonhosted.org/packages/0e/07/c9ed0bd428df6f87183fca565a79fee19fa7c88c7f00a7f011ab4379e77a/PyQt5-5.15.11.tar.gz",
+    "archive_member": "PyQt5-5.15.11/LICENSE",
+    "archive_sha256": "fda45743ebb4a27b4b1a51c6d8ef455c4c1b5d610c90d2934c7802b5c1557c52",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "package": "retry",
+    "version": "0.9.2",
+    "source": "https://github.com/opencv/opencv/blob/4.9.0/LICENSE",
+    "note": "Unmodified Apache-2.0 license text, shared by Apache-licensed dependencies.",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "file": "ONNXRuntime-1.22.0-ThirdPartyNotices.txt",
+    "package": "onnxruntime-native",
+    "version": "1.22.0",
+    "source": "https://github.com/microsoft/onnxruntime/blob/v1.22.0/ThirdPartyNotices.txt",
+    "git_blob_sha": "7b2bbdd2094d14e40338c7645b25a78ae8cd5364",
+    "sha256": "e9e90971a8e75a9a8ac0c6412e29c1202d079998389915aa485f46c816c3b4cc"
+  }
+]

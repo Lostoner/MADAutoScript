@@ -1,0 +1,13 @@
+.venv/
+.python/
+.cache/
+__pycache__/
+*.py[cod]
+/config/
+/state/
+/runs/
+/artifacts/
+.pytest_cache/
+*.log
+/runtime/
+/dist/

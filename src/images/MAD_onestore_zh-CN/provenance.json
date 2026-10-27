@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "game_version": "ONEstore 1.10.3",
+  "logical_size": [
+    1280,
+    720
+  ],
+  "raw_size": [
+    1920,
+    1080
+  ],
+  "coordinate_space": "base xyxy",
+  "templates": {
+    "home_mail": {
+      "source": "local-ui-capture:5cec2b013b1ca9d5294af9993edb27673e1fd3296172acdaebea67e80afcf582",
+      "source_sha256": "5cec2b013b1ca9d5294af9993edb27673e1fd3296172acdaebea67e80afcf582",
+      "base_area": [
+        987,
+        28,
+        1028,
+        53
+      ],
+      "template_size": [
+        41,
+        25
+      ],
+      "sha256": "208b2d6abdfc5cd9c69d44bc0d9b58db21ec3dfb4fcd6c166283600070e2559d",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "home_mail",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "home_tasks": {
+      "source": "local-ui-capture:5cec2b013b1ca9d5294af9993edb27673e1fd3296172acdaebea67e80afcf582",
+      "source_sha256": "5cec2b013b1ca9d5294af9993edb27673e1fd3296172acdaebea67e80afcf582",
+      "base_area": [
+        185,
+        631,
+        213,
+        666
+      ],
+      "template_size": [
+        28,
+        35
+      ],
+      "sha256": "7ad4f74563d1bfec0ad6bd10481c48a3f6fc7dc9baa97a1f68e5a40872dbb6a4",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "home_tasks",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "mail_title": {
+      "source": "local-ui-capture:30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "source_sha256": "30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "base_area": [
+        127,
+        16,
+        202,
+        62
+      ],
+      "template_size": [
+        75,
+        46
+      ],
+      "sha256": "f8b91f2f3bc7ca3bdb71f491cc0c7111caae650bd3c0233ffb6ab89fa101a842",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "mail_title",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "mail_count": {
+      "source": "local-ui-capture:30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "source_sha256": "30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "base_area": [
+        282,
+        97,
+        348,
+        117
+      ],
+      "template_size": [
+        66,
+        20
+      ],
+      "sha256": "7d833c722e3f7dfcc917ee19ea23e002b114b9ed95ac6bb23826888bde689993",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "mail_count",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "tasks_title": {
+      "source": "local-ui-capture:b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "source_sha256": "b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "base_area": [
+        127,
+        16,
+        202,
+        62
+      ],
+      "template_size": [
+        75,
+        46
+      ],
+      "sha256": "79f7a0348e04efb2c8238aeb65b59c67fe7cab6699336d9c47c98adf056c05cb",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "tasks_title",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "tasks_daily": {
+      "source": "local-ui-capture:b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "source_sha256": "b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "base_area": [
+        78,
+        92,
+        228,
+        137
+      ],
+      "template_size": [
+        150,
+        45
+      ],
+      "sha256": "df68c9b9aca30b8c92f1587b62545ea5394b0aa5b631aaa318341924b04b6e30",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "tasks_daily",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "common_home": {
+      "source": "local-ui-capture:b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "source_sha256": "b3750d59cecdfbf31e8b32b2a7cf6621293d396a6d9a3f858319cd0a0b360108",
+      "base_area": [
+        1160,
+        24,
+        1202,
+        64
+      ],
+      "template_size": [
+        42,
+        40
+      ],
+      "sha256": "619f6ca306e2de1c7cedc2e2c48b1eeb9aefbee6492f5296fc456587b35a5854",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "common_home",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "popup_reward": {
+      "source": "local-ui-capture:80264390c9e6e3e09bc81091d469880ca69e0a7aae80d0b1649bdd150db0331d",
+      "source_sha256": "80264390c9e6e3e09bc81091d469880ca69e0a7aae80d0b1649bdd150db0331d",
+      "base_area": [
+        547,
+        220,
+        744,
+        281
+      ],
+      "template_size": [
+        197,
+        61
+      ],
+      "sha256": "3f631a22378a816626cc958038b3f0267e7d4d92b8d14a72b2979cbd4e506046",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "popup_reward",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "mail_claim_active": {
+      "source": "local-ui-capture:30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "source_sha256": "30aa9a14983c2f25cacf477bd4c95a9e8e2d8032ff99eac548118aec8e4f7c4a",
+      "base_area": [
+        1034,
+        641,
+        1185,
+        677
+      ],
+      "template_size": [
+        151,
+        36
+      ],
+      "sha256": "374d39399fa2b09103718ed3e32ff2eb5c1f9bfba15ca80159f0ca7a7d531e23",
+      "threshold": 0.9,
+      "rgb_diff": 18,
+      "purpose": "mail_claim_active",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "mail_claim_inactive": {
+      "source": "local-ui-capture:e62608d3ea1218c5babedc465a5920a17a25d6b8bbb320adff9e7d8f3a798597",
+      "source_sha256": "e62608d3ea1218c5babedc465a5920a17a25d6b8bbb320adff9e7d8f3a798597",
+      "base_area": [
+        1034,
+        641,
+        1185,
+        677
+      ],
+      "template_size": [
+        151,
+        36
+      ],
+      "sha256": "73c8c75fa674da0549fd2cea65c5d76d90130ffacde0b81f908cfa3ece08ea54",
+      "threshold": 0.9,
+      "rgb_diff": 18,
+      "purpose": "mail_claim_inactive",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "daily_claim_inactive": {
+      "source": "local-ui-capture:52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "source_sha256": "52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "base_area": [
+        1036,
+        656,
+        1197,
+        698
+      ],
+      "template_size": [
+        161,
+        42
+      ],
+      "sha256": "2a53915f5e49570449273523bb51e826b93b04c0660407012dda6d85efa1905f",
+      "threshold": 0.9,
+      "rgb_diff": 18,
+      "purpose": "daily_claim_inactive",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "daily_empty": {
+      "source": "local-ui-capture:52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "source_sha256": "52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "base_area": [
+        622,
+        374,
+        824,
+        398
+      ],
+      "template_size": [
+        202,
+        24
+      ],
+      "sha256": "b73f9346d7c5cc16ce9f75af68c3e866b2384a4b97da3302577ecf0c806f1292",
+      "threshold": 0.9,
+      "rgb_diff": 18,
+      "purpose": "daily_empty",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "daily_score_label": {
+      "source": "local-ui-capture:52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "source_sha256": "52c565a9241d377a60f4f90ab4a9878cdc19415ed6ac38839364def2e163f909",
+      "base_area": [
+        261,
+        167,
+        325,
+        189
+      ],
+      "template_size": [
+        64,
+        22
+      ],
+      "sha256": "c9f757d0af10d1535dd8e0562cf2fea71d33000da624a28e2dc06de3c6e43a8e",
+      "threshold": 0.9,
+      "rgb_diff": 18,
+      "purpose": "daily_score_label",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_mall_home": {
+      "source": "local-ui-capture:3963a00e54a5f433838473db8505f0a6ceec12c900848128f27ad0be0e4554b3",
+      "source_sha256": "3963a00e54a5f433838473db8505f0a6ceec12c900848128f27ad0be0e4554b3",
+      "base_area": [
+        1160,
+        24,
+        1202,
+        64
+      ],
+      "template_size": [
+        42,
+        40
+      ],
+      "sha256": "910ba014d6c23f5654ff4e2167edf9646865985947f008e050bf804d6b56f367",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_mall_home",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_procurement_title": {
+      "source": "local-ui-capture:0038810b6e71bd9b928fc109c2d2ca282e340d529695db5f3b8acb3cdf38d645",
+      "source_sha256": "0038810b6e71bd9b928fc109c2d2ca282e340d529695db5f3b8acb3cdf38d645",
+      "base_area": [
+        130,
+        20,
+        248,
+        64
+      ],
+      "template_size": [
+        118,
+        44
+      ],
+      "sha256": "eb2bd5337ef879c05bd80791b270d530765a3fd015a2e9a0781c83414c946273",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_procurement_title",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_sweep_button": {
+      "source": "local-ui-capture:b6a6c26775b437316afd958fa5d5f57766781cf269822eee7d84e7eb320459cf",
+      "source_sha256": "b6a6c26775b437316afd958fa5d5f57766781cf269822eee7d84e7eb320459cf",
+      "base_area": [
+        715,
+        640,
+        804,
+        673
+      ],
+      "template_size": [
+        89,
+        33
+      ],
+      "sha256": "0a66744a2477edcdd649e9acf767691c2602b00e5efeb033a506bda74040db7a",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_sweep_button",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_count_one": {
+      "source": "local-ui-capture:205f69a1c31b95fbc3e65972039553903313f8bb1dfac9352142b97444758dd8",
+      "source_sha256": "205f69a1c31b95fbc3e65972039553903313f8bb1dfac9352142b97444758dd8",
+      "base_area": [
+        630,
+        270,
+        659,
+        298
+      ],
+      "template_size": [
+        29,
+        28
+      ],
+      "sha256": "67131c32bd36469e678974b8b2ca67386483f749f4ffe3091382643c46fb4272",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_count_one",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_balance_zero": {
+      "source": "local-ui-capture:205f69a1c31b95fbc3e65972039553903313f8bb1dfac9352142b97444758dd8",
+      "source_sha256": "205f69a1c31b95fbc3e65972039553903313f8bb1dfac9352142b97444758dd8",
+      "base_area": [
+        718,
+        358,
+        747,
+        387
+      ],
+      "template_size": [
+        29,
+        29
+      ],
+      "sha256": "9c4f69d74d11301f46eb99c9c17c191f4b9016f9ebaa082f064ea9522d11e6e6",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_balance_zero",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_seed_soldout": {
+      "source": "local-ui-capture:3963a00e54a5f433838473db8505f0a6ceec12c900848128f27ad0be0e4554b3",
+      "source_sha256": "3963a00e54a5f433838473db8505f0a6ceec12c900848128f27ad0be0e4554b3",
+      "base_area": [
+        357,
+        470,
+        521,
+        568
+      ],
+      "template_size": [
+        164,
+        98
+      ],
+      "sha256": "40dbab0f120c960ffbda95c8211f4a24d8ec569206a62cd2000eddcf56d21140",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_seed_soldout",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_score_zero": {
+      "source": "local-ui-capture:184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "source_sha256": "184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "base_area": [
+        332,
+        199,
+        363,
+        232
+      ],
+      "template_size": [
+        31,
+        33
+      ],
+      "sha256": "74c6d6b11de15f40e92110e6a93eddc56ead985a6f432c61f97cfd2ad923dc40",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_score_zero",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_point_unclaimed3": {
+      "source": "local-ui-capture:184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "source_sha256": "184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "base_area": [
+        832,
+        144,
+        889,
+        202
+      ],
+      "template_size": [
+        57,
+        58
+      ],
+      "sha256": "985e26f673a938492f6af11c24e35c9d239df28291ef448ce70c3b0577fea0b3",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_point_unclaimed3",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_point_unclaimed5": {
+      "source": "local-ui-capture:184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "source_sha256": "184e36dc8b657118f2c25f43e844a398da1090e1caf925ef1a69ea69f470ccd7",
+      "base_area": [
+        1135,
+        144,
+        1192,
+        202
+      ],
+      "template_size": [
+        57,
+        58
+      ],
+      "sha256": "273bed9d51e2a9413998702af14e63629171e3fb5d2941d73b7b086d2ca3367e",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_point_unclaimed5",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_challenge_normal_stage": {
+      "source": "local-ui-capture:0c5efcd3464798bb1ccc47a73546aa4e2eb7194bbf8c931ad315b902aa495680",
+      "source_sha256": "0c5efcd3464798bb1ccc47a73546aa4e2eb7194bbf8c931ad315b902aa495680",
+      "base_area": [
+        775,
+        315,
+        852,
+        349
+      ],
+      "template_size": [
+        77,
+        34
+      ],
+      "sha256": "6d894b5e806312c8b2c01c108b795ae02a1c91fcc06cb66a10731467ee9048c0",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_challenge_normal_stage",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_challenge_procurement_stage": {
+      "source": "local-ui-capture:0c5efcd3464798bb1ccc47a73546aa4e2eb7194bbf8c931ad315b902aa495680",
+      "source_sha256": "0c5efcd3464798bb1ccc47a73546aa4e2eb7194bbf8c931ad315b902aa495680",
+      "base_area": [
+        990,
+        492,
+        1075,
+        529
+      ],
+      "template_size": [
+        85,
+        37
+      ],
+      "sha256": "4dee67890111730177a57f2750d69095de86172118690bfdec0d9fe3e7d97d41",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_challenge_procurement_stage",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_normal_shop_title": {
+      "source": "local-ui-capture:aa0b6d2f2a4b6630ec7cd881b2352f671857bab5cea6f1a532c9e72a3aa8425c",
+      "source_sha256": "aa0b6d2f2a4b6630ec7cd881b2352f671857bab5cea6f1a532c9e72a3aa8425c",
+      "base_area": [
+        129,
+        17,
+        408,
+        64
+      ],
+      "template_size": [
+        279,
+        47
+      ],
+      "sha256": "39b87388747d0f11975015e3b91e8d2aa60384e8038c9e366061c2ae66e0f8a3",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_normal_shop_title",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_gold_currency": {
+      "source": "local-ui-capture:7649d8df4cb192e7d4567533d8c1f8b1739c3626b3b867142d5aff338667bb1a",
+      "source_sha256": "7649d8df4cb192e7d4567533d8c1f8b1739c3626b3b867142d5aff338667bb1a",
+      "base_area": [
+        650,
+        496,
+        686,
+        538
+      ],
+      "template_size": [
+        36,
+        42
+      ],
+      "sha256": "0d357afcf0b566e93cc1057d9005f6a2951af948528fb5970b460b6cea8c55df",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_gold_currency",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_date_ticket": {
+      "source": "local-ui-capture:66f7636bed07ab11317b72094f758e23b2e879782f446515a4672ad2db896e9f",
+      "source_sha256": "66f7636bed07ab11317b72094f758e23b2e879782f446515a4672ad2db896e9f",
+      "base_area": [
+        720,
+        443,
+        775,
+        493
+      ],
+      "template_size": [
+        55,
+        50
+      ],
+      "sha256": "a44d53e6ff8557cbd39c1f60b60590474758d57076a652a4c440c30329e97f50",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_date_ticket",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_mochi_close": {
+      "source": "local-ui-capture:82d6cba45565d0596ba3beacc853cc6fbe0b4058a013901bf9ac139d1f90819e",
+      "source_sha256": "82d6cba45565d0596ba3beacc853cc6fbe0b4058a013901bf9ac139d1f90819e",
+      "base_area": [
+        1135,
+        5,
+        1197,
+        65
+      ],
+      "template_size": [
+        62,
+        60
+      ],
+      "sha256": "28a5c15b60e558167cda986edaff421d9564ab192a02c25be76ce18c34f89ec5",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_mochi_close",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_date_result_close": {
+      "source": "local-ui-capture:6435b3af5a38b205d96c72b761fff872010fcd966b222a08e7a6ab8395644d5c",
+      "source_sha256": "6435b3af5a38b205d96c72b761fff872010fcd966b222a08e7a6ab8395644d5c",
+      "base_area": [
+        1151,
+        16,
+        1200,
+        65
+      ],
+      "template_size": [
+        49,
+        49
+      ],
+      "sha256": "3a1654d04451568d753a1284b0999b3effd6550bc8f49208e508db4cafe88d10",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_date_result_close",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_date_gauge": {
+      "source": "local-ui-capture:6435b3af5a38b205d96c72b761fff872010fcd966b222a08e7a6ab8395644d5c",
+      "source_sha256": "6435b3af5a38b205d96c72b761fff872010fcd966b222a08e7a6ab8395644d5c",
+      "base_area": [
+        911,
+        271,
+        1086,
+        314
+      ],
+      "template_size": [
+        175,
+        43
+      ],
+      "sha256": "f1cc5f64ab23ea5143ee80aee47181e2bd57c46f5f8aa9bbc7593de4b8a3a210",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_date_gauge",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_date_zero": {
+      "source": "local-ui-capture:c501029c477543d1b901704eefa107fbacaae686594753dc56619ad970d95b68",
+      "source_sha256": "c501029c477543d1b901704eefa107fbacaae686594753dc56619ad970d95b68",
+      "base_area": [
+        876,
+        453,
+        900,
+        481
+      ],
+      "template_size": [
+        24,
+        28
+      ],
+      "sha256": "a680bc8ee396930b9eebf8d0f0287685251d846a9d83e6db29d14167fce88731",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_date_zero",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_date_rankup": {
+      "source": "local-ui-capture:16c221afed6f131a9945398b4db0728f1d14d6380869f1a83e597b0ea908cf21",
+      "source_sha256": "16c221afed6f131a9945398b4db0728f1d14d6380869f1a83e597b0ea908cf21",
+      "base_area": [
+        870,
+        338,
+        1130,
+        383
+      ],
+      "template_size": [
+        260,
+        45
+      ],
+      "sha256": "71e5b72d6ce41a3f6f33d704e48351758df10072056c759c0346ff823bf13b30",
+      "threshold": 0.96,
+      "rgb_diff": 15,
+      "purpose": "m4_date_rankup",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "m4_mochi_close_core": {
+      "source": "local-ui-capture:fb866a57922a76714ce89a43c37f96529bceeadec3fe0bdb2d8db49a1427825a",
+      "source_sha256": "fb866a57922a76714ce89a43c37f96529bceeadec3fe0bdb2d8db49a1427825a",
+      "base_area": [
+        1153,
+        18,
+        1180,
+        48
+      ],
+      "template_size": [
+        27,
+        30
+      ],
+      "sha256": "25e46f28f7b40bbaf5f4bb6957929cd1c34b5d9a797abcd4c6b041bfe803530f",
+      "threshold": 0.97,
+      "rgb_diff": 12,
+      "purpose": "close icon interior, excludes character-dependent background",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    },
+    "pass_home": {
+      "source": "local-ui-capture:815ea0c2273a6074e68548dc08f801735657d3466ad3370a7e043e1f841d46ed",
+      "source_sha256": "815ea0c2273a6074e68548dc08f801735657d3466ad3370a7e043e1f841d46ed",
+      "base_area": [
+        1160,
+        24,
+        1202,
+        64
+      ],
+      "template_size": [
+        42,
+        40
+      ],
+      "sha256": "5de101141b0851d4ceae373acbc53f70bda9173c304ea182730cff803fc2b75a",
+      "threshold": 0.88,
+      "rgb_diff": 22,
+      "purpose": "pass unobscured home icon",
+      "copyright": "MAD game UI; original rights holders; not GPL artwork"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+MADAutoScript is a separately maintained derivative of Blue Archive Auto Script (BAAS).
+
+Upstream authors: pur1fying and the Blue Archive Auto Script contributors.
+Repository: https://github.com/pur1fying/blue_archive_auto_script
+Baseline: 1110e88df5955df277737ea9717869b9ca88362b
+License: GPL-3.0-only. LICENSE retains the upstream license text unchanged.
+MAD adaptation began 2026-10-22; current local release candidate is 0.7.4 (2026-10-27).
+Modified by the MADAutoScript contributors; upstream authorship is retained.
+Application license: GPL-3.0-only. This notice does not relicense third-party components.
+
+BAAS-derived application structure:
+- Main -> MadThread -> Scheduler / solve -> task module.
+- co_detect state loop, recovery, scheduling, OCR and screenshot/control APIs.
+- Configuration and Qt components adapted to independent MAD data and paths.
+- Ordinary sweeps follow normal-task flow; Flara and procurement share academy/scrimmage flow.
+- Shop follows common_shop/shop_utils, with MAD product names located by OCR.
+- Cafe/lesson patterns inform stamina collection and named free dating.
+
+The source ZIP includes only the active MAD application, selected self-contained
+tests and its maintenance files. The development repository's original upstream
+history, obsolete modules, personal profiles and local evidence are not included.
+docs/source-manifest.json records the exact included file hashes and baseline.
+
+MaaBd2 (alkaidjin/Maa-Assistant-Browndust2, reference package v26.10.8) was
+a reference for visual layout and font choices. No MaaBd2/MXU implementation,
+executable, font file or artwork is included. MADAutoScript uses
+PyQt5/Fluent Widgets and Windows system fonts.
+MaaFramework was evaluated but is not an application source or runtime dependency
+of this release. Migration is deferred; it is not on the current implementation plan.
+
+BAAS C++ OCR is a separate pinned upstream dependency. Its binary/model hashes
+and source revision are in docs/ocr-runtime.lock.json, and the corresponding
+source archive accompanies the Windows portable release.
+
+The 0.7.4 changes clarify provenance, credits, dependency license texts and release
+instructions. Game execution behavior, configuration schema and saved progress
+are unchanged from 0.7.3. See NOTICE.md, THIRD_PARTY.txt and CHANGELOG.md.
