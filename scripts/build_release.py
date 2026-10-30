@@ -22,6 +22,7 @@ PUBLIC = [
     'scripts/install_ocr.py', 'scripts/build_release.py', 'scripts/vendor_sources.py',
     'scripts/check_install.py', 'tests/test_shop_and_picker.py',
     'tests/test_ui_workspace.py', 'tests/test_release_core.py', 'tests/test_release_privacy.py', 'tests/test_daily_refresh.py',
+    'tests/test_stage_search.py',
     'src/game_catalog.json',
     'licenses/SOURCES.json', 'licenses/PyQt5-5.15.11-GPL.txt',
     'licenses/apkutils2-1.0.0-MIT.txt', 'licenses/cigam-0.0.3-MIT.txt',

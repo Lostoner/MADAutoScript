@@ -13,10 +13,16 @@ RESOURCE_AREAS={'normal_stage':(900,23,987,65),'flara_stage':(1041,28,1120,59),'
 def stage_text(text):
     return norm(text).upper()
 
+def stage_text_area(self):
+    # Normal-stage stars are detected as text and can flip BAAS OCR's shared
+    # orientation vote by 180 degrees. Keep them outside the name search;
+    # the separate pixel check below still verifies all three stars.
+    return (305,82,510,697) if self.sweep_page=='normal_stage' else (305,82,610,697)
+
 def selected(self):
     # BAAS normal-task search uses en-us; use it for the selected row too.
     language='en-us' if self.sweep_page=='normal_stage' else 'zh-cn'
-    for row in self.scan((305,82,610,697),language):
+    for row in self.scan(stage_text_area(self),language):
         x,y=row['point']
         if stage_text(row['text'])==self.sweep_target and x<510:
             # BAAS uses the selected-page colour feature as the loop end.
@@ -45,7 +51,7 @@ def select_stage(self,task,stage_id):
     option=options[stage_id]
     candidates=[stage_text(v['target']) for v in options.values() if v['group']==option['group']]
     self.sweep_target=stage_text(option['target'])
-    point=swipe_search_target_str(self,search_area=(305,82,610,697),possible_strs=candidates,
+    point=swipe_search_target_str(self,search_area=stage_text_area(self),possible_strs=candidates,
         target_str_index=candidates.index(self.sweep_target),swipe_params=(512,606,512,234,.5,.6),
         ocr_language='en-us' if self.sweep_page=='normal_stage' else 'zh-cn',ocr_str_replace_func=stage_text)
     if point is None: raise RuntimeError('关卡列表未找到 '+option['title'])

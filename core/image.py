@@ -67,7 +67,9 @@ def swipe_search_target_str(self,name=None,search_area=(0,0,1280,720),threshold=
     direction=first_retry_dir
     reverse=(*swipe_params[2:4],*swipe_params[:2],*swipe_params[4:])
     normalise=ocr_str_replace_func or (lambda x:x)
-    for attempt in range(max_swipe_times):
+    # Inspect the initial view and the result of every allowed swipe, including
+    # the last one. Do not move the list again after the search budget is spent.
+    for attempt in range(max_swipe_times+1):
         if attempt: self.update_screenshot_array()
         rows=self.ocr.text_list(self,search_area,ocr_language,ocr_candidates)
         indexes=[]
@@ -75,6 +77,7 @@ def swipe_search_target_str(self,name=None,search_area=(0,0,1280,720),threshold=
             text=normalise(row['text'])
             if text==target: return row['point']
             if text in possible_strs: indexes.append(possible_strs.index(text))
+        if attempt==max_swipe_times: break
         if indexes and target_str_index>max(indexes): params=swipe_params
         elif indexes and target_str_index<min(indexes): params=reverse
         else:
