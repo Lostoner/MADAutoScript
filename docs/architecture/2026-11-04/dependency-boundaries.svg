@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="822" viewBox="0 0 1500 822" role="img" aria-labelledby="title desc">
+<title id="title">MAD 三对双向模块引用</title><desc id="desc">箭头从导入方指向提供对象的模块。每对都有一条函数内导入，以及一条反向的顶层导入。</desc>
+<rect x="0" y="0" width="1500" height="822" rx="0" fill="#F6F7F4" stroke="none" stroke-width="1.5"/>
+<rect x="53" y="37" width="6" height="86" rx="2" fill="#006E65" stroke="none" stroke-width="1.5"/>
+<text x="80" y="60" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">MAD  /  依赖基线</text>
+<text x="77" y="118" font-family="Microsoft YaHei" font-size="46" font-weight="bold" fill="#162F38">哪三对模块互相导入？</text>
+<text x="1166" y="64" font-family="Microsoft YaHei" font-size="24" font-weight="bold" fill="#162F38">0.7.5 开发工作树</text>
+<text x="1166" y="99" font-family="Segoe UI" font-size="22" font-weight="normal" fill="#546C70">2026-11-04</text>
+<polyline points="54,152 1445,152" fill="none" stroke="#CBD7D4" stroke-width="1.5" stroke-linecap="round"/>
+<text x="55" y="188" font-family="Microsoft YaHei" font-size="21" font-weight="normal" fill="#37535C">箭头从导入方指向提供方。</text>
+<text x="576" y="188" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">→  函数内导入</text>
+<text x="877" y="188" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#89591F">←  模块顶层导入</text>
+<text x="56" y="235" font-family="Segoe UI" font-size="19" font-weight="bold" fill="#006E65">01</text>
+<text x="98" y="235" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#37535C">程序入口与窗口</text>
+<rect x="55" y="250" width="292" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<rect x="1137" y="250" width="308" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="74" y="290" font-family="Segoe UI" font-size="29" font-weight="bold" fill="#162F38">main</text>
+<text x="74" y="324" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">应用入口与运行控制器</text>
+<text x="1157" y="290" font-family="Segoe UI" font-size="28" font-weight="bold" fill="#162F38">window</text>
+<text x="1157" y="324" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">桌面窗口</text>
+<text x="380" y="272" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">create_window 导入 Window，创建主窗口</text>
+<polyline points="348,285 1128,285" fill="none" stroke="#006E65" stroke-width="2" stroke-linecap="round"/>
+<polygon points="1134,285 1122,280 1122,290" fill="#006E65"/>
+<text x="380" y="317" font-family="Microsoft YaHei" font-size="21" font-weight="normal" fill="#89591F">窗口导入 Main，实例化运行控制器</text>
+<polyline points="355,329 1135,329" fill="none" stroke="#89591F" stroke-width="2" stroke-linecap="round"/>
+<polygon points="349,329 361,324 361,334" fill="#89591F"/>
+<text x="56" y="407" font-family="Segoe UI" font-size="19" font-weight="bold" fill="#006E65">02</text>
+<text x="98" y="407" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#37535C">任务注册与一键领取</text>
+<rect x="55" y="422" width="292" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<rect x="1137" y="422" width="308" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="74" y="462" font-family="Segoe UI" font-size="29" font-weight="bold" fill="#162F38">core.tasks</text>
+<text x="74" y="496" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">任务定义与分派表</text>
+<text x="1157" y="462" font-family="Segoe UI" font-size="28" font-weight="bold" fill="#162F38">module.claim_all</text>
+<text x="1157" y="496" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">一键领取的任务实现</text>
+<text x="380" y="444" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">function_table 导入 claim_all，将其 implement 注册为处理器</text>
+<polyline points="348,457 1128,457" fill="none" stroke="#006E65" stroke-width="2" stroke-linecap="round"/>
+<polygon points="1134,457 1122,452 1122,462" fill="#006E65"/>
+<text x="380" y="489" font-family="Microsoft YaHei" font-size="21" font-weight="normal" fill="#89591F">领取模块导入 CLAIM_MODULES，用中文名称报告各子项</text>
+<polyline points="355,501 1135,501" fill="none" stroke="#89591F" stroke-width="2" stroke-linecap="round"/>
+<polygon points="349,501 361,496 361,506" fill="#89591F"/>
+<text x="56" y="579" font-family="Segoe UI" font-size="19" font-weight="bold" fill="#006E65">03</text>
+<text x="98" y="579" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#37535C">通用识别与游戏导航</text>
+<rect x="55" y="594" width="292" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<rect x="1137" y="594" width="308" height="95" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="74" y="634" font-family="Segoe UI" font-size="29" font-weight="bold" fill="#162F38">core.picture</text>
+<text x="74" y="668" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">通用图像检测与反应</text>
+<text x="1157" y="634" font-family="Segoe UI" font-size="28" font-weight="bold" fill="#162F38">module.restart</text>
+<text x="1157" y="668" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">MAD 导航与弹窗处理</text>
+<text x="380" y="616" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">deal_with_pop_ups 导入 deal_with_popup，通用规则未命中时交给它处理</text>
+<polyline points="348,629 1128,629" fill="none" stroke="#006E65" stroke-width="2" stroke-linecap="round"/>
+<polygon points="1134,629 1122,624 1122,634" fill="#006E65"/>
+<text x="380" y="661" font-family="Microsoft YaHei" font-size="21" font-weight="normal" fill="#89591F">导航模块导入 picture，调用 co_detect 回到主页或打开目标页</text>
+<polyline points="355,673 1135,673" fill="none" stroke="#89591F" stroke-width="2" stroke-linecap="round"/>
+<polygon points="349,673 361,668 361,678" fill="#89591F"/>
+<polyline points="55,731 1445,731" fill="none" stroke="#CBD7D4" stroke-width="1.5" stroke-linecap="round"/>
+<text x="55" y="781" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#162F38">如何判断风险</text>
+<text x="247" y="781" font-family="Microsoft YaHei" font-size="21" font-weight="normal" fill="#37535C">三对引用均有一侧在函数执行时才导入；双向依赖本身不等于启动时会死循环。</text>
+</svg>

@@ -2,9 +2,11 @@
 from pathlib import Path
 from PyQt5.QtCore import QObject, QTimer, QUrl, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QMessageBox
 from core.config import AppSettingsRepository
 from core.tasks import TASKS
+from core.plan_store import PlanStore
+from core.plan_runner import PlanRunner
 from gui.fragments.home import HomeFragment, ACTIVE_STATES
 from gui.fragments.settings import SettingsFragment
 from gui.fragments.switch import SwitchFragment
@@ -29,6 +31,12 @@ class Window(QMainWindow):
         self._signals = RuntimeSignals(self)
         self._signals.received.connect(self._on_runtime_event, Qt.QueuedConnection)
         self.runtime = Main(repository, self._signals.received.emit)
+        self.plan_store = PlanStore(repository)
+        self.plan_runner = PlanRunner(self.plan_store, self.runtime, self._signals.received.emit)
+        self.plan_dialog = self.plan_page = None
+        self.material_dialog = None
+        self._plan_auto = False
+        self._last_plan_status = None
         self._closing = False
         self._last_run_dir = None
         self._preview_frame = None
@@ -49,8 +57,10 @@ class Window(QMainWindow):
         home.recordsRequested.connect(self._open_records)
         home.settingsRequested.connect(lambda: self.settings_dialog.exec_())
         home.schedulerRequested.connect(self._show_scheduler)
+        home.planRequested.connect(self._show_plan)
         home.previewRequested.connect(self._refresh_preview)
         self.routineInterface.saved.connect(lambda c: self._update_profile(c, self.app_snapshot))
+        self.routineInterface.materialRequested.connect(lambda key,action:self._show_materials('routine',key,action))
         self.settingInterface.saved.connect(self._update_profile)
         for page in (self.routineInterface, self.schedulerInterface, self.settingInterface):
             page.message.connect(home.on_log_received)
@@ -64,6 +74,15 @@ class Window(QMainWindow):
         self._preview_timer.start()
         self._update_profile(self.snapshot, self.app_snapshot)
         home.on_log_received('INFO', '就绪。开始 / 继续将保留本轮剩余关卡。')
+        self._plan_timer = QTimer(self)
+        self._plan_timer.setInterval(5000)
+        self._plan_timer.timeout.connect(self._tick_plan)
+        self._plan_timer.start()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        # Only the window admitted by the profile UI lock may recover plan state.
+        self._sync_plan_view()
 
     @property
     def worker(self): return self.runtime.worker
@@ -84,6 +103,144 @@ class Window(QMainWindow):
         if not self.schedulerInterface.has_unsaved_changes(): self.schedulerInterface.cancel_changes()
         self.scheduler_dialog.exec_()
 
+    def _show_plan(self):
+        if self.plan_dialog is None:
+            from gui.fragments.plan import PlanFragment
+            self.plan_dialog = QDialog(self)
+            self.plan_dialog.setWindowTitle('计划 · MADAutoScript')
+            layout = QVBoxLayout(self.plan_dialog)
+            self.plan_page = PlanFragment(self.plan_store, self.theme, self.plan_dialog)
+            layout.addWidget(self.plan_page)
+            self.plan_page.saved.connect(self._plan_updated)
+            self.plan_page.materialRequested.connect(lambda day,key,action:self._show_materials('plan:'+day,key,action))
+            self.plan_page.autoRequested.connect(self._change_plan_auto)
+            self.plan_page.startRequested.connect(self._start_plan)
+            self.plan_page.resumeRemainingRequested.connect(lambda: self._start_plan(remaining=True))
+            self.plan_page.stopTodayRequested.connect(lambda: self._plan_action(self.plan_runner.stop_today))
+            self.theme.apply_surface(self.plan_dialog)
+            available = self.screen().availableGeometry()
+            self.plan_dialog.resize(min(1260,available.width()), min(820,available.height()))
+        self.plan_page.refresh()
+        self._sync_plan_view()
+        self.plan_dialog.exec_()
+
+    def _plan_notice(self, message, error=False):
+        if not message: return
+        self.homeInterface.on_log_received('WARNING' if error else 'INFO', message)
+        if self.plan_page: self.plan_page.set_feedback(message)
+
+    def _show_materials(self, scope, key, action):
+        from gui.fragments.materials import MaterialDialog
+        editor=self.plan_page.editor if scope.startswith('plan:') else self.routineInterface
+        dialog=MaterialDialog(self.repository,self.theme,key,editor.editors[key].value().get('reserve',0),scope,self)
+        self.material_dialog=dialog
+        dialog.syncRequested.connect(self._sync_materials)
+        dialog.stopRequested.connect(self._request_stop)
+        dialog.tabs.setCurrentIndex(1 if action=='plan' else 0)
+        dialog.set_busy(bool(self.worker and self.worker.is_running))
+        available=self.screen().availableGeometry()
+        dialog.resize(min(1060,available.width()),min(730,available.height()))
+        if action=='sync': QTimer.singleShot(0,dialog.request_sync)
+        dialog.exec_()
+        self.material_dialog=None
+        dialog.deleteLater()
+
+    def _sync_materials(self):
+        if self.worker and self.worker.is_running: return
+        self._set_state('starting')
+        try: self.runtime.sync_materials()
+        except Exception as error:
+            self._set_state('failed'); self.homeInterface.on_log_received('ERROR',str(error))
+            if self.material_dialog: self.material_dialog.feedback.setText(str(error))
+
+    def _plan_action(self, action):
+        try:
+            outcome = action()
+            self._plan_updated()
+            self._plan_notice(self.plan_runner.message, outcome is False)
+        except (ValueError, OSError, RuntimeError) as exc:
+            self._plan_notice(str(exc), True)
+
+    def _start_plan(self, remaining=False):
+        if self.worker and self.worker.is_running:
+            self._plan_notice('请先停止正在执行的任务，再开始今日计划。', True)
+            return
+        try:
+            _, status, reason = self.plan_runner.today_status()
+            if status == 'needs_review':
+                box = QMessageBox(self.plan_dialog or self)
+                box.setWindowTitle('核对上次操作')
+                box.setText(reason + '\n请先在游戏中核对该步骤的结果。')
+                done = box.addButton('已生效，跳过该步骤', QMessageBox.AcceptRole)
+                retry = box.addButton('确认未执行，允许重试', QMessageBox.ActionRole)
+                cancel = box.addButton('暂不继续', QMessageBox.RejectRole)
+                box.setDefaultButton(cancel)
+                box.exec_()
+                if box.clickedButton() not in (done, retry): return
+                self.plan_runner.resolve_current(done=box.clickedButton() == done)
+            self._plan_action(lambda: self.plan_runner.start_today(remaining=remaining))
+        except (ValueError, OSError, RuntimeError) as exc:
+            self._plan_notice(str(exc), True)
+
+    def _change_plan_auto(self, enabled):
+        if enabled:
+            if self.worker and self.worker.is_running and not self.plan_runner.is_plan_running:
+                self._plan_notice('普通日常正在执行，停止后即可启用计划。', True)
+                return
+            if QMessageBox.question(self.plan_dialog or self, '启用自动执行',
+                    self.plan_runner.preview_auto() + '\n保持工作台打开，按此排期自动执行？',
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+                return
+        self._plan_action(lambda: self.plan_runner.set_auto(enabled))
+        if enabled: self._tick_plan()
+
+    def _plan_updated(self):
+        if self.plan_page: self.plan_page.refresh()
+        self._sync_plan_view()
+
+    def _sync_plan_view(self):
+        if not self.plan_store.path.exists(): return
+        try:
+            plan = self.plan_store.load()
+            day, status, reason = self.plan_runner.today_status()
+            self._plan_auto = plan['auto']
+            current = plan['days'].get(day, {})
+            from gui.fragments.plan import STATUS
+            record = self.plan_store.record(day)
+            status_text = STATUS.get(status,reason)
+            if record.get('auto_skip') and status=='ready': status_text = '今天仅手动执行'
+            summary = ' · '.join(filter(None, ('计划自动执行' if self._plan_auto else '手动计划',
+                                           day, record.get('name') or current.get('name'), status_text)))
+            if status in ('running','stopped','partial','failed','needs_review'):
+                rows = [e for e in (record.get('routine') or current.get('routine',{})).get('events',[]) if e['enabled']]
+                passed = {key for key,g in record.get('groups',{}).items() if g.get('scheduled')}
+                summary += f'　已处理 {sum(e["instance_id"] in passed for e in rows)}/{len(rows)} 条'
+                upcoming_step = record.get('inflight') or next((e for e in rows if e['instance_id'] not in passed),{})
+                if upcoming_step.get('event_name'): summary += ' · '+upcoming_step['event_name']
+            upcoming = next((d for d in sorted(plan['days']) if day < d <= plan['end']
+                             and plan['days'][d]['kind'] == 'tasks'), None)
+            if upcoming:
+                item = plan['days'][upcoming]
+                at = item.get('time') or plan['default_time']
+                summary += '　|　下次：' + upcoming + ' ' + ('次日 ' if at < plan['reset_at'][:5] else '') + at + ' ' + item.get('name','')
+            action = '查看日程' if status in ('unscheduled','rest','ended','completed','partial') else '开始 / 继续今日'
+            self.homeInterface.set_plan_summary(summary, self._plan_auto, action)
+            if self.plan_page: self.plan_page.set_runtime_status(day,status,reason)
+            self._last_plan_status = (day,status,reason)
+        except (ValueError, OSError, RuntimeError) as exc:
+            self._plan_auto = False
+            self.homeInterface.set_plan_summary('计划读取失败：' + str(exc), False)
+
+    def _tick_plan(self):
+        if self._closing or not self.isVisible() or not self.plan_store.path.exists(): return
+        try:
+            if self._plan_auto: self.plan_runner.poll()
+            status = self.plan_runner.today_status()
+            if status != self._last_plan_status or (self._plan_auto and status[1]=='ended'):
+                self._plan_updated()
+        except (ValueError, OSError, RuntimeError) as exc:
+            self._plan_notice(str(exc), True)
+
     def _fit_initial_size(self, available=None):
         available = available or self.screen().availableGeometry()
         self.setMinimumSize(min(980, available.width()), min(680, available.height()))
@@ -91,7 +248,8 @@ class Window(QMainWindow):
 
     def _apply_theme(self):
         self.theme.apply_surface(self, 'window')
-        for dialog in (self.settings_dialog, self.scheduler_dialog): self.theme.apply_surface(dialog)
+        for dialog in (self.settings_dialog, self.scheduler_dialog, self.plan_dialog):
+            if dialog: self.theme.apply_surface(dialog)
         s = self.theme.surfaces
         self.setStyleSheet(f'QMainWindow#madWorkspace {{background:{s["window"]};}} QComboBox {{color:{self.theme.colors["text"]};background:{s["input"]};'
                            f'border:1px solid {s["line"]};border-radius:5px;padding:5px 8px;}} '
@@ -120,9 +278,19 @@ class Window(QMainWindow):
         self.homeInterface.set_state(state)
         for page in (self.routineInterface, self.settingInterface, self.schedulerInterface):
             page.set_busy(state in ACTIVE_STATES)
+        if self.material_dialog: self.material_dialog.set_busy(state in ACTIVE_STATES)
 
     def _start(self, continuous=False, new_round=False):
         if self.worker and self.worker.is_running: return
+        if self._plan_auto:
+            if continuous or new_round:
+                self._plan_notice('请先暂停计划的自动执行，再运行普通日常。', True)
+                return
+            if self.homeInterface.plan_action_text == '查看日程':
+                self._show_plan()
+                return
+            self._start_plan()
+            return
         for page, dialog in ((self.settingInterface, self.settings_dialog), (self.schedulerInterface, self.scheduler_dialog)):
             if page.has_unsaved_changes():
                 self.homeInterface.on_log_received('WARNING', '设置或调度中有未保存的更改，请先保存或撤销。')
@@ -138,7 +306,9 @@ class Window(QMainWindow):
 
     def _request_stop(self):
         if self.worker:
-            self.worker.request_stop()
+            if not self._closing and self.plan_runner.is_plan_running:
+                self.plan_runner.stop_today()
+            else: self.worker.request_stop()
             self._set_state('stopping')
 
     def _refresh_preview(self):
@@ -150,7 +320,8 @@ class Window(QMainWindow):
 
     @pyqtSlot(dict)
     def _on_runtime_event(self, event):
-        self.routineInterface.on_event(event)
+        is_plan = bool(event.get('plan_date'))
+        if not is_plan and not event.get('material_sync'): self.routineInterface.on_event(event)
         self.homeInterface.on_device_event(event)
         if event.get('message'):
             self.homeInterface.on_log_received(event.get('level', 'INFO'), event['message'], event['kind'] != 'log')
@@ -160,11 +331,18 @@ class Window(QMainWindow):
         elif event['kind'] == 'result':
             self._last_run_dir = event['result'].get('run_dir')
             self._set_state(event['state'])
-            unfinished = self.repository.load_config()['unfinished_tasks']
-            handled = {item['task_id'] for item in event['result'].get('tasks', [])}
+            if self.material_dialog:
+                self.material_dialog.refreshed()
+                error=(event['result'].get('error') or '').strip()
+                self.material_dialog.feedback.setText(error.splitlines()[-1] if error else
+                    '同步完成，已刷新库存和目标表。' if event.get('material_sync') and event['state']=='succeeded' else event.get('message','任务已结束。'))
+            unfinished = {} if is_plan else self.repository.load_config()['unfinished_tasks']
+            handled = {item.get('instance_id',item['task_id']) for item in event['result'].get('tasks', [])}
             remaining = sum(len(unfinished.get(task, [])) for task in handled)
             if remaining:
                 self.homeInterface.on_log_received('INFO', f'本次执行的任务还有 {remaining} 个关卡保留待续。')
+        if is_plan and event['kind'] in ('task','result'):
+            self._plan_updated()
         if self._closing: self._finish_close()
 
     def _open_records(self):
@@ -181,6 +359,7 @@ class Window(QMainWindow):
             return
         self._close_timer.stop()
         self._preview_timer.stop()
+        self._plan_timer.stop()
         self.runtime.close()
         event.accept()
 

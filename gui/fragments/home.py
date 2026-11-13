@@ -21,13 +21,15 @@ class HomeFragment(QFrame):
     recordsRequested = pyqtSignal()
     settingsRequested = pyqtSignal()
     schedulerRequested = pyqtSignal()
+    planRequested = pyqtSignal()
     previewRequested = pyqtSignal()
 
     def __init__(self, theme, routine, parent=None):
         super().__init__(parent)
         self.setObjectName('homeInterface')
         self.theme, self.routine = theme, routine
-        self.state, self.dirty = 'idle', False
+        self.state, self.dirty, self.plan_auto = 'idle', False, False
+        self.plan_action_text = '开始 / 继续今日'
         self.entries = deque(maxlen=2000)
         self._pixmap = None
         layout = QVBoxLayout(self)
@@ -39,12 +41,16 @@ class HomeFragment(QFrame):
         self.edition_label = typography(QLabel('ONEstore · MuMu', self), 12)
         header.addWidget(self.edition_label)
         header.addStretch()
-        for name, signal in [('运行记录', self.recordsRequested), ('调度', self.schedulerRequested), ('设置', self.settingsRequested)]:
+        for name, signal in [('计划', self.planRequested), ('运行记录', self.recordsRequested), ('调度', self.schedulerRequested), ('设置', self.settingsRequested)]:
             button = PushButton(name, self)
             button.setFixedHeight(32)
             button.clicked.connect(signal)
             header.addWidget(button)
         layout.addLayout(header)
+        self.plan_summary = typography(QLabel('', self), 13)
+        self.plan_summary.setWordWrap(True)
+        self.plan_summary.hide()
+        layout.addWidget(self.plan_summary)
         self.splitter = QSplitter(Qt.Horizontal, self)
         self.splitter.setChildrenCollapsible(False)
         self.splitter.setHandleWidth(12)
@@ -169,9 +175,16 @@ class HomeFragment(QFrame):
 
     def _buttons(self):
         busy = self.state in ACTIVE_STATES
-        self.routine_button.setText('正在停止…' if self.state == 'stopping' else '停止' if busy else '保存并开始' if self.dirty else '开始 / 继续')
+        self.routine_button.setText('正在停止…' if self.state == 'stopping' else '停止' if busy else self.plan_action_text if self.plan_auto else '保存并开始' if self.dirty else '开始 / 继续')
         self.routine_button.setEnabled(self.state != 'stopping')
-        self.more_button.setEnabled(not busy)
+        self.more_button.setEnabled(not busy and not self.plan_auto)
+
+    def set_plan_summary(self, text, automatic, action_text='开始 / 继续今日'):
+        self.plan_auto = automatic
+        self.plan_action_text = action_text
+        self.plan_summary.setText(text)
+        self.plan_summary.setVisible(bool(text))
+        self._buttons()
 
     def set_state(self, state):
         self.state = state

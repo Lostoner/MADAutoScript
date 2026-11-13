@@ -33,6 +33,8 @@ MADAutoScript 贡献者自 2026-10-22 起加入 MAD ONEstore 的页面识别、�
 
 游戏名称、角色名、界面及 34 张功能识别裁剪归游戏原权利人所有；本项目的 GPL 不授予这些素材的版权。识别图来源在 `src/images/MAD_onestore_zh-CN/provenance.json` 中记录。Segoe UI / Microsoft YaHei UI 使用 Windows 系统字体，不随包分发字体文件。MuMu、游戏客户端和其账号服务均由用户另行安装、使用，不包含在发布包中。
 
+开发版补充（2026-11-13）：素材分类选择器内置 61 张原始 WebP 图标，复用已采集的 [anyabot/MAD-Viewer](https://github.com/anyabot/MAD-Viewer/tree/c312e4e305cc57441e5bd615224642ea9b2168ce) 固定版本。逐项来源见 `src/images/materials/provenance.json`。图标版权仍归游戏原权利人；上游代码许可和本项目 GPL 均不授予这些游戏美术的版权。
+
 本项目由 MADAutoScript 维护者单独维护，不是 BAAS、MaaBd2、MaaFramework、MuMu 或游戏官方项目；致谢不表示任何上游参与维护、审核或背书。
 
 ## 分发说明

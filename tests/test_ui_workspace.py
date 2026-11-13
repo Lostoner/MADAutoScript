@@ -24,6 +24,58 @@ class WorkspaceAcceptance(TestCase):
         self.app.processEvents()
         self.tmp.cleanup()
 
+    def test_independent_instructions_edit_schedule_and_reopen(self):
+        from PyQt5.QtCore import Qt, QTimer
+        from PyQt5.QtTest import QTest
+        from PyQt5.QtWidgets import QApplication
+        p, w = self.page, self.window
+        w.show(); self.app.processEvents()
+        base = 'mad.normal_sweep'
+        spent = p.sweep_selectors[base].value()
+        self.repo.set_unfinished(base, [])
+        copy_action = next(a for a in p.cards[base].menu.actions() if a.text() == '复制到末尾')
+        copy_action.trigger()
+        tail = p._queue[-1]['instance_id']
+        self.assertNotEqual(base, tail)
+        self.assertEqual(p.sweep_selectors[tail].value(), spent)
+        p.sweep_selectors[tail].rows[spent[0]['stage_id']][2].setValue(0)
+        p.rename_instance(tail, '领奖后清体力')
+        p.follow_choices[tail].setCurrentIndex(p.follow_choices[tail].findData('mad.claim_all'))
+        def select_shop():
+            dialog = QApplication.activeModalWidget()
+            dialog.setTextValue('普通商店')
+            dialog.accept()
+        QTimer.singleShot(0, select_shop)
+        QTest.mouseClick(p.add_button, Qt.LeftButton)
+        shop = p._queue[-1]['instance_id']
+        p.editors[shop].shop_counts['c_battle_log'].setValue(3)
+        self.assertNotEqual(p.editors[shop].value(), p.editors['mad.gold_shop'].value())
+        p.drop_task(tail, shop, False)
+        QTest.mouseClick(p.save_button, Qt.LeftButton)
+        self.assertFalse(p.has_unsaved_changes(), p.feedback.text())
+        events = self.repo.load_events()
+        self.assertEqual(sorted(events, key=lambda e:e['priority'])[-1]['instance_id'], tail)
+        self.assertEqual(self.repo.load_config()['unfinished_tasks'][base], [])
+        self.assertEqual(self.repo.load_config()['unfinished_tasks'][tail][0]['count'], 'max')
+        s = w.schedulerInterface
+        s.cancel_changes()
+        self.assertIn(tail, s.rows)
+        self.assertFalse(s.rows[tail][0].isEnabled())
+        s.rows[shop][0].setValue(2700)
+        s.save_changes()
+        self.assertEqual(next(e for e in self.repo.load_events() if e['instance_id']==shop)['interval'], 2700)
+        p.remove_instance(tail)
+        self.assertNotIn(tail,p.cards)
+        p.cancel_changes()
+        self.assertEqual(p.cards[tail].title.text(), '领奖后清体力')
+        p.on_event({'kind':'task','task_id':base,'instance_id':tail,'state':'running'})
+        self.assertTrue(p.cards[tail].property('active'))
+        self.assertFalse(p.cards[base].property('active'))
+        p.remove_instance(shop)
+        self.assertTrue(p.save_changes())
+        self.assertNotIn(shop,self.repo.load_config()['instance_params'])
+        self.assertIn('mad.gold_shop',p.cards)
+
     def test_inline_edit_undo_and_save_before_start(self):
         from PyQt5.QtCore import Qt
         from PyQt5.QtTest import QTest
@@ -47,7 +99,7 @@ class WorkspaceAcceptance(TestCase):
 
         # Failed save must keep the draft and must not start the worker.
         p.mail.setChecked(not p.mail.isChecked())
-        with patch.object(self.repo, 'save_events', side_effect=ValueError('fixture error')), patch.object(w.runtime, 'start') as start:
+        with patch.object(self.repo, 'save_routine_instances', side_effect=ValueError('fixture error')), patch.object(w.runtime, 'start') as start:
             QTest.mouseClick(w.homeInterface.routine_button, Qt.LeftButton)
             start.assert_not_called()
         self.assertTrue(p.has_unsaved_changes())
@@ -114,6 +166,7 @@ class WorkspaceAcceptance(TestCase):
                               for e in self.repo.load_events()],fields={'enabled'})
         worker=MadThread(self.repo,self.window._on_runtime_event)
         worker.connect=Mock()
+        worker.line=Mock(return_value='100/114')
         worker.to_main_page=Mock()
         worker.func_dict['restart']=Mock(return_value=True)
         worker.template=Mock(return_value=True)
@@ -138,14 +191,14 @@ class WorkspaceAcceptance(TestCase):
 
         self.repo.reset_progress()
         with patch('module.normal_sweep.navigate'), patch.object(sweep_utils,'enter'), patch.object(sweep_utils,'select_stage',return_value=True), \
-             patch.object(sweep_utils,'start_sweep',return_value=(False,0)):
+             patch.object(sweep_utils,'start_sweep',return_value=sweep_utils.SweepBatch()):
             result=run()
         self.assertEqual(result['status'],'PARTIAL')
         self.assertEqual(result['completed'],0)
         self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'待续 · 剩余 2 次')
         self.assertIn(result['reason'],self.window.homeInterface.logger_box.toPlainText())
         with patch('module.normal_sweep.navigate'), patch.object(sweep_utils,'enter'), patch.object(sweep_utils,'select_stage',return_value=True), \
-             patch.object(sweep_utils,'start_sweep',return_value=(True,2)), patch.object(sweep_utils,'return_to_list'):
+             patch.object(sweep_utils,'start_sweep',return_value=sweep_utils.SweepBatch(2)), patch.object(sweep_utils,'return_to_list'):
             result=run()
         self.assertEqual(result['status'],'SUCCESS')
         self.assertEqual(result['completed'],2)

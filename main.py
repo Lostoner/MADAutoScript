@@ -17,6 +17,15 @@ class Main:
         self.ocr_client=None
         self.worker=None
         self.lock=threading.Lock()
+    def acquire_execution(self):
+        # Both a calendar worker and a CLI worker lease the ordinary profile.
+        from PyQt5.QtCore import QLockFile
+        folder=self.repository.data_root/'state'/self.repository.profile_id
+        folder.mkdir(parents=True,exist_ok=True)
+        lease=QLockFile(str(folder/'execution.lock'))
+        lease.setStaleLockTime(0)
+        if not lease.tryLock(0): raise RuntimeError('此配置已有任务正在执行，请等待其结束。')
+        return lease
     def get_ocr(self,guard):
         from core.ocr.baas_ocr_client.Client import BaasOcrClient
         with self.lock:
@@ -34,6 +43,11 @@ class Main:
             self.worker.request_stop()
             self.worker.join()
         if self.ocr_client: self.ocr_client.stop_server(); self.ocr_client=None
+    def sync_materials(self):
+        from core.Mad_thread import MadThread
+        if self.worker and self.worker.is_running: return False
+        self.worker=MadThread(self.repository,self.emit,self,material_sync=True)
+        return self.worker.start_tasks()
 
 def repository(root): return ProfileRepository(Path(root)/'config/default')
 
@@ -72,18 +86,27 @@ def main(argv=None):
     mode.add_argument('--run-routine',action='store_true',help='Run enabled tasks once, resuming unfinished stages')
     mode.add_argument('--continuous',action='store_true',help='Run due tasks using the same worker')
     parser.add_argument('--new-round',action='store_true')
-    parser.add_argument('--tasks',nargs='+',choices=[k for k,v in TASKS.items() if v.supported])
+    targets=parser.add_mutually_exclusive_group()
+    targets.add_argument('--tasks',nargs='+',choices=[k for k,v in TASKS.items() if v.supported])
+    targets.add_argument('--steps',nargs='+',metavar='INSTANCE_ID',help='按 --diagnose 中的 instance_id 运行指定指令')
     args=parser.parse_args(argv)
-    if (args.new_round or args.tasks) and not args.run_routine: parser.error('--tasks/--new-round 需与 --run-routine 一起使用')
+    if (args.new_round or args.tasks or args.steps) and not args.run_routine: parser.error('--steps/--tasks/--new-round 需与 --run-routine 一起使用')
     if sys.stdout and hasattr(sys.stdout,'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
     root=args.data_dir.resolve()
     try:
         if args.diagnose:
             print(json.dumps(diagnostics(root),ensure_ascii=False,indent=2)); return 0
         if args.run_routine or args.continuous:
+            from core.plan_store import PlanStore
+            calendar=PlanStore(repository(root))
+            if calendar.path.exists() and calendar.load()['auto']:
+                parser.error('计划正在自动执行；请先在工作台的「计划」中暂停，再运行普通日常。')
+            if args.steps:
+                known={e['instance_id'] for e in repository(root).load_events() if TASKS[e['func_name']].supported}
+                if set(args.steps)-known: parser.error('指定的指令不存在或尚未适配')
             runtime=Main(repository(root),lambda e:print(json.dumps(e,ensure_ascii=False),flush=True))
             try:
-                runtime.start(args.continuous,args.tasks,args.new_round)
+                runtime.start(args.continuous,args.steps or args.tasks,args.new_round)
                 while not runtime.worker.join(.25): pass
                 return 0 if runtime.worker.state in ('succeeded','stopped') else 2
             except KeyboardInterrupt: return 130

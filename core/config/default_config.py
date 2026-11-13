@@ -6,7 +6,7 @@ defaults from commit 1110e88df5955df277737ea9717869b9ca88362b.
 from core.tasks import TASKS
 from core.routine_catalog import default_routine
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 
 def default_config(profile_id: str = "default") -> dict:
@@ -30,6 +30,7 @@ def default_config(profile_id: str = "default") -> dict:
         },
         "runtime": {"screenshot_interval": 0.3},
         "routine": default_routine(),
+        "instance_params": {},
         "unfinished_tasks": {}, "last_refresh_config_time": 0,
         "scheduling": {"timezone": "Asia/Hong_Kong",
                        "reset": {"enabled": True, "server_timezone": "Asia/Hong_Kong", "reset_at": "04:00"}},
@@ -37,7 +38,7 @@ def default_config(profile_id: str = "default") -> dict:
 
 
 def default_events() -> list:
-    return [{"func_name":key,"event_name":spec.title,"enabled":spec.default_enabled,
+    return [{"instance_id":key,"func_name":key,"event_name":spec.title,"enabled":spec.default_enabled,
              "priority":index,"next_tick":0,"interval":86400,"daily_reset":[],
              "pre_task":[],"post_task":[],"disabled_time_range":[]}
             for index,(key,spec) in enumerate(TASKS.items())]

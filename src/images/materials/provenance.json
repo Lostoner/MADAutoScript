@@ -1,0 +1,252 @@
+{
+  "source": "https://github.com/anyabot/MAD-Viewer",
+  "commit": "c312e4e305cc57441e5bd615224642ea9b2168ce",
+  "use": "Material picker and goal-list thumbnails; original WebP files, not game screenshots.",
+  "copyright": "MAD game artwork; rights remain with original rights holders, not GPL artwork.",
+  "items": {
+    "goods:1": {
+      "file": "src/images/materials/goods-1.webp",
+      "source_path": "public/icons/item/Icon_Goods_gold.webp"
+    },
+    "item:80201": {
+      "file": "src/images/materials/item-80201.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Earring_Tier2.webp"
+    },
+    "item:80202": {
+      "file": "src/images/materials/item-80202.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Necklace_Tier2.webp"
+    },
+    "item:80203": {
+      "file": "src/images/materials/item-80203.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bracelet_Tier2.webp"
+    },
+    "item:80204": {
+      "file": "src/images/materials/item-80204.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Ring_Tier2.webp"
+    },
+    "item:80205": {
+      "file": "src/images/materials/item-80205.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Hat_Tier2.webp"
+    },
+    "item:80206": {
+      "file": "src/images/materials/item-80206.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Shoes_Tier2.webp"
+    },
+    "item:80207": {
+      "file": "src/images/materials/item-80207.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bag_Tier2.webp"
+    },
+    "item:80208": {
+      "file": "src/images/materials/item-80208.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Gloves_Tier2.webp"
+    },
+    "item:80209": {
+      "file": "src/images/materials/item-80209.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Key_ring_Tier2.webp"
+    },
+    "item:80210": {
+      "file": "src/images/materials/item-80210.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Badge_Tier2.webp"
+    },
+    "item:80211": {
+      "file": "src/images/materials/item-80211.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bra_Tier2.webp"
+    },
+    "item:80212": {
+      "file": "src/images/materials/item-80212.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Panties_Tier2.webp"
+    },
+    "item:80301": {
+      "file": "src/images/materials/item-80301.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Earring_Tier3.webp"
+    },
+    "item:80302": {
+      "file": "src/images/materials/item-80302.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Necklace_Tier3.webp"
+    },
+    "item:80303": {
+      "file": "src/images/materials/item-80303.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bracelet_Tier3.webp"
+    },
+    "item:80304": {
+      "file": "src/images/materials/item-80304.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Ring_Tier3.webp"
+    },
+    "item:80305": {
+      "file": "src/images/materials/item-80305.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Hat_Tier3.webp"
+    },
+    "item:80306": {
+      "file": "src/images/materials/item-80306.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Shoes_Tier3.webp"
+    },
+    "item:80307": {
+      "file": "src/images/materials/item-80307.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bag_Tier3.webp"
+    },
+    "item:80308": {
+      "file": "src/images/materials/item-80308.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Gloves_Tier3.webp"
+    },
+    "item:80309": {
+      "file": "src/images/materials/item-80309.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Key_ring_Tier3.webp"
+    },
+    "item:80310": {
+      "file": "src/images/materials/item-80310.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Badge_Tier3.webp"
+    },
+    "item:80311": {
+      "file": "src/images/materials/item-80311.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bra_Tier3.webp"
+    },
+    "item:80312": {
+      "file": "src/images/materials/item-80312.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Panties_Tier3.webp"
+    },
+    "item:80401": {
+      "file": "src/images/materials/item-80401.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Earring_Tier4.webp"
+    },
+    "item:80402": {
+      "file": "src/images/materials/item-80402.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Necklace_Tier4.webp"
+    },
+    "item:80403": {
+      "file": "src/images/materials/item-80403.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bracelet_Tier4.webp"
+    },
+    "item:80404": {
+      "file": "src/images/materials/item-80404.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Ring_Tier4.webp"
+    },
+    "item:80405": {
+      "file": "src/images/materials/item-80405.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Hat_Tier4.webp"
+    },
+    "item:80406": {
+      "file": "src/images/materials/item-80406.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Shoes_Tier4.webp"
+    },
+    "item:80407": {
+      "file": "src/images/materials/item-80407.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bag_Tier4.webp"
+    },
+    "item:80408": {
+      "file": "src/images/materials/item-80408.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Gloves_Tier4.webp"
+    },
+    "item:80409": {
+      "file": "src/images/materials/item-80409.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Key_ring_Tier4.webp"
+    },
+    "item:80410": {
+      "file": "src/images/materials/item-80410.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Badge_Tier4.webp"
+    },
+    "item:80411": {
+      "file": "src/images/materials/item-80411.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bra_Tier4.webp"
+    },
+    "item:80412": {
+      "file": "src/images/materials/item-80412.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Panties_Tier4.webp"
+    },
+    "item:80501": {
+      "file": "src/images/materials/item-80501.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Earring_Tier5.webp"
+    },
+    "item:80502": {
+      "file": "src/images/materials/item-80502.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Necklace_Tier5.webp"
+    },
+    "item:80503": {
+      "file": "src/images/materials/item-80503.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bracelet_Tier5.webp"
+    },
+    "item:80504": {
+      "file": "src/images/materials/item-80504.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Ring_Tier5.webp"
+    },
+    "item:80505": {
+      "file": "src/images/materials/item-80505.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Hat_Tier5.webp"
+    },
+    "item:80506": {
+      "file": "src/images/materials/item-80506.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Shoes_Tier5.webp"
+    },
+    "item:80507": {
+      "file": "src/images/materials/item-80507.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bag_Tier5.webp"
+    },
+    "item:80508": {
+      "file": "src/images/materials/item-80508.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Gloves_Tier5.webp"
+    },
+    "item:80509": {
+      "file": "src/images/materials/item-80509.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Key_ring_Tier5.webp"
+    },
+    "item:80510": {
+      "file": "src/images/materials/item-80510.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Badge_Tier5.webp"
+    },
+    "item:80511": {
+      "file": "src/images/materials/item-80511.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Bra_Tier5.webp"
+    },
+    "item:80512": {
+      "file": "src/images/materials/item-80512.webp",
+      "source_path": "public/icons/item/Icon_Equipment_Piece_Panties_Tier5.webp"
+    },
+    "item:90101": {
+      "file": "src/images/materials/item-90101.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Earring_Tier1.webp"
+    },
+    "item:90102": {
+      "file": "src/images/materials/item-90102.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Necklace_Tier1.webp"
+    },
+    "item:90103": {
+      "file": "src/images/materials/item-90103.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Bracelet_Tier1.webp"
+    },
+    "item:90104": {
+      "file": "src/images/materials/item-90104.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Ring_Tier1.webp"
+    },
+    "item:90105": {
+      "file": "src/images/materials/item-90105.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Hat_Tier1.webp"
+    },
+    "item:90106": {
+      "file": "src/images/materials/item-90106.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Shoes_Tier1.webp"
+    },
+    "item:90107": {
+      "file": "src/images/materials/item-90107.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Bag_Tier1.webp"
+    },
+    "item:90108": {
+      "file": "src/images/materials/item-90108.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Gloves_Tier1.webp"
+    },
+    "item:90109": {
+      "file": "src/images/materials/item-90109.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Key_ring_Tier1.webp"
+    },
+    "item:90110": {
+      "file": "src/images/materials/item-90110.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Badge_Tier1.webp"
+    },
+    "item:90111": {
+      "file": "src/images/materials/item-90111.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Bra_Tier1.webp"
+    },
+    "item:90112": {
+      "file": "src/images/materials/item-90112.webp",
+      "source_path": "public/icons/equip/Icon_Equipment_Panties_Tier1.webp"
+    }
+  }
+}

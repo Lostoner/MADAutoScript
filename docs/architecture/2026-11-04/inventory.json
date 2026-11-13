@@ -1,0 +1,3905 @@
+{
+  "format": 1,
+  "scope": "scripts/build_release.py:source_files() from main and window; includes package initializers",
+  "edge_semantics": "First-party explicit Python imports. Function-local imports included; implicit parent-package loads, external imports and dynamic calls are excluded. TYPE_CHECKING references are recorded separately from runtime edges. SCCs imply mutual source dependencies, not necessarily initialization-time cycles.",
+  "counts": {
+    "modules": 58,
+    "classes": 53,
+    "functions_and_methods_including_nested": 408,
+    "runtime_import_pairs": 133,
+    "cross_layer_runtime_import_pairs": 93
+  },
+  "layer_module_counts": {
+    "bootstrap": 1,
+    "catalog_registry": 3,
+    "common": 3,
+    "device": 10,
+    "execution": 2,
+    "game_tasks": 16,
+    "ocr": 2,
+    "recognition": 5,
+    "storage": 7,
+    "ui": 9
+  },
+  "layer_import_pairs": [
+    {
+      "from": "bootstrap",
+      "to": "catalog_registry",
+      "module_pairs": 1
+    },
+    {
+      "from": "bootstrap",
+      "to": "common",
+      "module_pairs": 1
+    },
+    {
+      "from": "bootstrap",
+      "to": "execution",
+      "module_pairs": 1
+    },
+    {
+      "from": "bootstrap",
+      "to": "ocr",
+      "module_pairs": 1
+    },
+    {
+      "from": "bootstrap",
+      "to": "storage",
+      "module_pairs": 1
+    },
+    {
+      "from": "bootstrap",
+      "to": "ui",
+      "module_pairs": 3
+    },
+    {
+      "from": "catalog_registry",
+      "to": "catalog_registry",
+      "module_pairs": 2
+    },
+    {
+      "from": "catalog_registry",
+      "to": "game_tasks",
+      "module_pairs": 9
+    },
+    {
+      "from": "device",
+      "to": "common",
+      "module_pairs": 1
+    },
+    {
+      "from": "device",
+      "to": "device",
+      "module_pairs": 6
+    },
+    {
+      "from": "execution",
+      "to": "catalog_registry",
+      "module_pairs": 1
+    },
+    {
+      "from": "execution",
+      "to": "common",
+      "module_pairs": 1
+    },
+    {
+      "from": "execution",
+      "to": "device",
+      "module_pairs": 4
+    },
+    {
+      "from": "execution",
+      "to": "execution",
+      "module_pairs": 1
+    },
+    {
+      "from": "execution",
+      "to": "game_tasks",
+      "module_pairs": 1
+    },
+    {
+      "from": "execution",
+      "to": "ocr",
+      "module_pairs": 2
+    },
+    {
+      "from": "execution",
+      "to": "recognition",
+      "module_pairs": 3
+    },
+    {
+      "from": "execution",
+      "to": "storage",
+      "module_pairs": 5
+    },
+    {
+      "from": "game_tasks",
+      "to": "catalog_registry",
+      "module_pairs": 3
+    },
+    {
+      "from": "game_tasks",
+      "to": "common",
+      "module_pairs": 1
+    },
+    {
+      "from": "game_tasks",
+      "to": "game_tasks",
+      "module_pairs": 10
+    },
+    {
+      "from": "game_tasks",
+      "to": "recognition",
+      "module_pairs": 27
+    },
+    {
+      "from": "ocr",
+      "to": "common",
+      "module_pairs": 3
+    },
+    {
+      "from": "ocr",
+      "to": "device",
+      "module_pairs": 2
+    },
+    {
+      "from": "ocr",
+      "to": "storage",
+      "module_pairs": 1
+    },
+    {
+      "from": "recognition",
+      "to": "catalog_registry",
+      "module_pairs": 1
+    },
+    {
+      "from": "recognition",
+      "to": "common",
+      "module_pairs": 2
+    },
+    {
+      "from": "recognition",
+      "to": "device",
+      "module_pairs": 2
+    },
+    {
+      "from": "recognition",
+      "to": "game_tasks",
+      "module_pairs": 1
+    },
+    {
+      "from": "recognition",
+      "to": "recognition",
+      "module_pairs": 5
+    },
+    {
+      "from": "storage",
+      "to": "catalog_registry",
+      "module_pairs": 4
+    },
+    {
+      "from": "storage",
+      "to": "common",
+      "module_pairs": 1
+    },
+    {
+      "from": "storage",
+      "to": "storage",
+      "module_pairs": 5
+    },
+    {
+      "from": "ui",
+      "to": "bootstrap",
+      "module_pairs": 1
+    },
+    {
+      "from": "ui",
+      "to": "catalog_registry",
+      "module_pairs": 3
+    },
+    {
+      "from": "ui",
+      "to": "recognition",
+      "module_pairs": 1
+    },
+    {
+      "from": "ui",
+      "to": "storage",
+      "module_pairs": 5
+    },
+    {
+      "from": "ui",
+      "to": "ui",
+      "module_pairs": 11
+    }
+  ],
+  "runtime_import_cycles": [
+    [
+      "core.picture",
+      "module.restart"
+    ],
+    [
+      "core.tasks",
+      "module.claim_all"
+    ],
+    [
+      "main",
+      "window"
+    ]
+  ],
+  "modules": [
+    {
+      "module": "core",
+      "path": "core/__init__.py",
+      "layer": "common",
+      "definitions": []
+    },
+    {
+      "module": "core.Mad_thread",
+      "path": "core/Mad_thread.py",
+      "layer": "execution",
+      "definitions": [
+        {
+          "name": "MadThread",
+          "kind": "ClassDef",
+          "line": 35
+        },
+        {
+          "name": "MadThread.__init__",
+          "kind": "FunctionDef",
+          "line": 36
+        },
+        {
+          "name": "MadThread._state",
+          "kind": "FunctionDef",
+          "line": 76
+        },
+        {
+          "name": "MadThread.click",
+          "kind": "FunctionDef",
+          "line": 302
+        },
+        {
+          "name": "MadThread.connect",
+          "kind": "FunctionDef",
+          "line": 98
+        },
+        {
+          "name": "MadThread.daily_config_refresh",
+          "kind": "FunctionDef",
+          "line": 262
+        },
+        {
+          "name": "MadThread.deal_with_func_call_timeout",
+          "kind": "FunctionDef",
+          "line": 251
+        },
+        {
+          "name": "MadThread.deal_with_package_incorrect",
+          "kind": "FunctionDef",
+          "line": 241
+        },
+        {
+          "name": "MadThread.emit",
+          "kind": "FunctionDef",
+          "line": 74
+        },
+        {
+          "name": "MadThread.get_resource",
+          "kind": "FunctionDef",
+          "line": 327
+        },
+        {
+          "name": "MadThread.is_running",
+          "kind": "FunctionDef",
+          "line": 73
+        },
+        {
+          "name": "MadThread.join",
+          "kind": "FunctionDef",
+          "line": 94
+        },
+        {
+          "name": "MadThread.line",
+          "kind": "FunctionDef",
+          "line": 287
+        },
+        {
+          "name": "MadThread.match",
+          "kind": "FunctionDef",
+          "line": 296
+        },
+        {
+          "name": "MadThread.note",
+          "kind": "FunctionDef",
+          "line": 319
+        },
+        {
+          "name": "MadThread.open_page",
+          "kind": "FunctionDef",
+          "line": 316
+        },
+        {
+          "name": "MadThread.request_stop",
+          "kind": "FunctionDef",
+          "line": 88
+        },
+        {
+          "name": "MadThread.run_group",
+          "kind": "FunctionDef",
+          "line": 185
+        },
+        {
+          "name": "MadThread.save_screenshot",
+          "kind": "FunctionDef",
+          "line": 322
+        },
+        {
+          "name": "MadThread.scan",
+          "kind": "FunctionDef",
+          "line": 292
+        },
+        {
+          "name": "MadThread.set_screenshot_interval",
+          "kind": "FunctionDef",
+          "line": 284
+        },
+        {
+          "name": "MadThread.solve",
+          "kind": "FunctionDef",
+          "line": 217
+        },
+        {
+          "name": "MadThread.start_tasks",
+          "kind": "FunctionDef",
+          "line": 79
+        },
+        {
+          "name": "MadThread.swipe",
+          "kind": "FunctionDef",
+          "line": 309
+        },
+        {
+          "name": "MadThread.template",
+          "kind": "FunctionDef",
+          "line": 301
+        },
+        {
+          "name": "MadThread.thread_starter",
+          "kind": "FunctionDef",
+          "line": 112
+        },
+        {
+          "name": "MadThread.thread_starter.prepare_pass",
+          "kind": "FunctionDef",
+          "line": 126
+        },
+        {
+          "name": "MadThread.to_main_page",
+          "kind": "FunctionDef",
+          "line": 313
+        },
+        {
+          "name": "MadThread.update_screenshot_array",
+          "kind": "FunctionDef",
+          "line": 275
+        },
+        {
+          "name": "_Events",
+          "kind": "ClassDef",
+          "line": 31
+        },
+        {
+          "name": "_Events.__init__",
+          "kind": "FunctionDef",
+          "line": 32
+        },
+        {
+          "name": "_Events.emit",
+          "kind": "FunctionDef",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "module": "core.color",
+      "path": "core/color.py",
+      "layer": "recognition",
+      "definitions": [
+        {
+          "name": "_get_rgb_at_index",
+          "kind": "FunctionDef",
+          "line": 24
+        },
+        {
+          "name": "_pixel_in_rgb_range",
+          "kind": "FunctionDef",
+          "line": 34
+        },
+        {
+          "name": "calcTotalRGBDiff",
+          "kind": "FunctionDef",
+          "line": 151
+        },
+        {
+          "name": "calcTotalRGBMeanABSDiff",
+          "kind": "FunctionDef",
+          "line": 155
+        },
+        {
+          "name": "check_sweep_availability",
+          "kind": "FunctionDef",
+          "line": 118
+        },
+        {
+          "name": "compareEachRGBDiff",
+          "kind": "FunctionDef",
+          "line": 144
+        },
+        {
+          "name": "compareTotalRGBDiff",
+          "kind": "FunctionDef",
+          "line": 140
+        },
+        {
+          "name": "create_rgb_feature",
+          "kind": "FunctionDef",
+          "line": 159
+        },
+        {
+          "name": "getRegionMeanRGB",
+          "kind": "FunctionDef",
+          "line": 136
+        },
+        {
+          "name": "match_any_rgb_feature",
+          "kind": "FunctionDef",
+          "line": 85
+        },
+        {
+          "name": "match_any_rgb_in_feature",
+          "kind": "FunctionDef",
+          "line": 92
+        },
+        {
+          "name": "match_rgb_feature",
+          "kind": "FunctionDef",
+          "line": 58
+        },
+        {
+          "name": "remove_rgb_feature",
+          "kind": "FunctionDef",
+          "line": 163
+        },
+        {
+          "name": "rgb_in_range",
+          "kind": "FunctionDef",
+          "line": 40
+        },
+        {
+          "name": "wait_loading",
+          "kind": "FunctionDef",
+          "line": 13
+        }
+      ]
+    },
+    {
+      "module": "core.config",
+      "path": "core/config/__init__.py",
+      "layer": "storage",
+      "definitions": []
+    },
+    {
+      "module": "core.config.config_set",
+      "path": "core/config/config_set.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "ConfigSet",
+          "kind": "ClassDef",
+          "line": 5
+        },
+        {
+          "name": "ConfigSet.__getitem__",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "ConfigSet.__init__",
+          "kind": "FunctionDef",
+          "line": 6
+        },
+        {
+          "name": "ConfigSet.dynamic_update",
+          "kind": "FunctionDef",
+          "line": 20
+        },
+        {
+          "name": "ConfigSet.get",
+          "kind": "FunctionDef",
+          "line": 12
+        },
+        {
+          "name": "ConfigSet.has",
+          "kind": "FunctionDef",
+          "line": 15
+        },
+        {
+          "name": "ConfigSet.set",
+          "kind": "FunctionDef",
+          "line": 16
+        }
+      ]
+    },
+    {
+      "module": "core.config.default_config",
+      "path": "core/config/default_config.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "default_app_settings",
+          "kind": "FunctionDef",
+          "line": 47
+        },
+        {
+          "name": "default_config",
+          "kind": "FunctionDef",
+          "line": 12
+        },
+        {
+          "name": "default_events",
+          "kind": "FunctionDef",
+          "line": 40
+        }
+      ]
+    },
+    {
+      "module": "core.config.repository",
+      "path": "core/config/repository.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "AppSettingsRepository",
+          "kind": "ClassDef",
+          "line": 352
+        },
+        {
+          "name": "AppSettingsRepository.__init__",
+          "kind": "FunctionDef",
+          "line": 353
+        },
+        {
+          "name": "AppSettingsRepository.load",
+          "kind": "FunctionDef",
+          "line": 354
+        },
+        {
+          "name": "AppSettingsRepository.save",
+          "kind": "FunctionDef",
+          "line": 356
+        },
+        {
+          "name": "ConfigBusyError",
+          "kind": "ClassDef",
+          "line": 23
+        },
+        {
+          "name": "ConfigError",
+          "kind": "ClassDef",
+          "line": 19
+        },
+        {
+          "name": "ConfigValidationError",
+          "kind": "ClassDef",
+          "line": 20
+        },
+        {
+          "name": "ProfileRepository",
+          "kind": "ClassDef",
+          "line": 96
+        },
+        {
+          "name": "ProfileRepository.__init__",
+          "kind": "FunctionDef",
+          "line": 97
+        },
+        {
+          "name": "ProfileRepository._commit_pair",
+          "kind": "FunctionDef",
+          "line": 110
+        },
+        {
+          "name": "ProfileRepository._ensure",
+          "kind": "FunctionDef",
+          "line": 117
+        },
+        {
+          "name": "ProfileRepository._finish_commit",
+          "kind": "FunctionDef",
+          "line": 105
+        },
+        {
+          "name": "ProfileRepository._validate_events",
+          "kind": "FunctionDef",
+          "line": 262
+        },
+        {
+          "name": "ProfileRepository._write_events",
+          "kind": "FunctionDef",
+          "line": 287
+        },
+        {
+          "name": "ProfileRepository.complete_sweep",
+          "kind": "FunctionDef",
+          "line": 235
+        },
+        {
+          "name": "ProfileRepository.load_config",
+          "kind": "FunctionDef",
+          "line": 207
+        },
+        {
+          "name": "ProfileRepository.load_events",
+          "kind": "FunctionDef",
+          "line": 210
+        },
+        {
+          "name": "ProfileRepository.patch_config",
+          "kind": "FunctionDef",
+          "line": 215
+        },
+        {
+          "name": "ProfileRepository.reset_progress",
+          "kind": "FunctionDef",
+          "line": 247
+        },
+        {
+          "name": "ProfileRepository.save_config",
+          "kind": "FunctionDef",
+          "line": 225
+        },
+        {
+          "name": "ProfileRepository.save_events",
+          "kind": "FunctionDef",
+          "line": 291
+        },
+        {
+          "name": "ProfileRepository.save_routine_instances",
+          "kind": "FunctionDef",
+          "line": 310
+        },
+        {
+          "name": "ProfileRepository.set_unfinished",
+          "kind": "FunctionDef",
+          "line": 229
+        },
+        {
+          "name": "RevisionConflictError",
+          "kind": "ClassDef",
+          "line": 22
+        },
+        {
+          "name": "UnsupportedSchemaVersion",
+          "kind": "ClassDef",
+          "line": 21
+        },
+        {
+          "name": "_merge",
+          "kind": "FunctionDef",
+          "line": 28
+        },
+        {
+          "name": "_read",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "_remaining",
+          "kind": "FunctionDef",
+          "line": 55
+        },
+        {
+          "name": "_remaining_plans",
+          "kind": "FunctionDef",
+          "line": 41
+        },
+        {
+          "name": "_validate",
+          "kind": "FunctionDef",
+          "line": 64
+        },
+        {
+          "name": "_validate_params",
+          "kind": "FunctionDef",
+          "line": 77
+        },
+        {
+          "name": "instance_params",
+          "kind": "FunctionDef",
+          "line": 34
+        }
+      ]
+    },
+    {
+      "module": "core.config.schedule_fields",
+      "path": "core/config/schedule_fields.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "format_periods",
+          "kind": "FunctionDef",
+          "line": 27
+        },
+        {
+          "name": "parse_periods",
+          "kind": "FunctionDef",
+          "line": 4
+        }
+      ]
+    },
+    {
+      "module": "core.device",
+      "path": "core/device/__init__.py",
+      "layer": "device",
+      "definitions": []
+    },
+    {
+      "module": "core.device.Control",
+      "path": "core/device/Control.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "Control",
+          "kind": "ClassDef",
+          "line": 4
+        },
+        {
+          "name": "Control.__init__",
+          "kind": "FunctionDef",
+          "line": 5
+        },
+        {
+          "name": "Control.click",
+          "kind": "FunctionDef",
+          "line": 8
+        },
+        {
+          "name": "Control.long_click",
+          "kind": "FunctionDef",
+          "line": 10
+        },
+        {
+          "name": "Control.swipe",
+          "kind": "FunctionDef",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "module": "core.device.Screenshot",
+      "path": "core/device/Screenshot.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "Screenshot",
+          "kind": "ClassDef",
+          "line": 5
+        },
+        {
+          "name": "Screenshot.__init__",
+          "kind": "FunctionDef",
+          "line": 6
+        },
+        {
+          "name": "Screenshot.ensure_interval",
+          "kind": "FunctionDef",
+          "line": 11
+        },
+        {
+          "name": "Screenshot.screenshot",
+          "kind": "FunctionDef",
+          "line": 13
+        }
+      ]
+    },
+    {
+      "module": "core.device.connection",
+      "path": "core/device/connection.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "Connection",
+          "kind": "ClassDef",
+          "line": 16
+        },
+        {
+          "name": "Connection.__init__",
+          "kind": "FunctionDef",
+          "line": 17
+        },
+        {
+          "name": "Connection.close",
+          "kind": "FunctionDef",
+          "line": 53
+        },
+        {
+          "name": "Connection.close_current_app",
+          "kind": "FunctionDef",
+          "line": 46
+        },
+        {
+          "name": "Connection.connect",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "Connection.get_current_package",
+          "kind": "FunctionDef",
+          "line": 44
+        },
+        {
+          "name": "Connection.send_input",
+          "kind": "FunctionDef",
+          "line": 48
+        },
+        {
+          "name": "Connection.shell",
+          "kind": "FunctionDef",
+          "line": 38
+        },
+        {
+          "name": "Connection.start_game",
+          "kind": "FunctionDef",
+          "line": 47
+        },
+        {
+          "name": "foreground_package",
+          "kind": "FunctionDef",
+          "line": 10
+        }
+      ]
+    },
+    {
+      "module": "core.device.control",
+      "path": "core/device/control/__init__.py",
+      "layer": "device",
+      "definitions": []
+    },
+    {
+      "module": "core.device.control.adb",
+      "path": "core/device/control/adb.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "AdbControl",
+          "kind": "ClassDef",
+          "line": 2
+        },
+        {
+          "name": "AdbControl.__init__",
+          "kind": "FunctionDef",
+          "line": 3
+        },
+        {
+          "name": "AdbControl.click",
+          "kind": "FunctionDef",
+          "line": 4
+        },
+        {
+          "name": "AdbControl.swipe",
+          "kind": "FunctionDef",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "module": "core.device.mumu_cli",
+      "path": "core/device/mumu_cli.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "DeviceInfo",
+          "kind": "ClassDef",
+          "line": 13
+        },
+        {
+          "name": "DeviceInfo.serial",
+          "kind": "FunctionDef",
+          "line": 21
+        },
+        {
+          "name": "DeviceInfo.to_dict",
+          "kind": "FunctionDef",
+          "line": 24
+        },
+        {
+          "name": "find_adb",
+          "kind": "FunctionDef",
+          "line": 56
+        },
+        {
+          "name": "get_device_info",
+          "kind": "FunctionDef",
+          "line": 49
+        },
+        {
+          "name": "parse_info",
+          "kind": "FunctionDef",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "module": "core.device.runtime",
+      "path": "core/device/runtime.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "Coordinates",
+          "kind": "ClassDef",
+          "line": 36
+        },
+        {
+          "name": "Coordinates.__init__",
+          "kind": "FunctionDef",
+          "line": 38
+        },
+        {
+          "name": "Coordinates.raw_area",
+          "kind": "FunctionDef",
+          "line": 43
+        },
+        {
+          "name": "Coordinates.raw_point",
+          "kind": "FunctionDef",
+          "line": 41
+        },
+        {
+          "name": "DeviceError",
+          "kind": "ClassDef",
+          "line": 7
+        },
+        {
+          "name": "ForegroundMismatch",
+          "kind": "ClassDef",
+          "line": 8
+        },
+        {
+          "name": "RunControl",
+          "kind": "ClassDef",
+          "line": 12
+        },
+        {
+          "name": "RunControl.__init__",
+          "kind": "FunctionDef",
+          "line": 13
+        },
+        {
+          "name": "RunControl.check",
+          "kind": "FunctionDef",
+          "line": 16
+        },
+        {
+          "name": "RunControl.timeout",
+          "kind": "FunctionDef",
+          "line": 18
+        },
+        {
+          "name": "RunControl.wait",
+          "kind": "FunctionDef",
+          "line": 21
+        },
+        {
+          "name": "hidden_process_args",
+          "kind": "FunctionDef",
+          "line": 26
+        },
+        {
+          "name": "run_bounded",
+          "kind": "FunctionDef",
+          "line": 29
+        }
+      ]
+    },
+    {
+      "module": "core.device.screenshot",
+      "path": "core/device/screenshot/__init__.py",
+      "layer": "device",
+      "definitions": []
+    },
+    {
+      "module": "core.device.screenshot.adb",
+      "path": "core/device/screenshot/adb.py",
+      "layer": "device",
+      "definitions": [
+        {
+          "name": "AdbScreenshot",
+          "kind": "ClassDef",
+          "line": 22
+        },
+        {
+          "name": "AdbScreenshot.__init__",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "AdbScreenshot.screenshot",
+          "kind": "FunctionDef",
+          "line": 24
+        },
+        {
+          "name": "Frame",
+          "kind": "ClassDef",
+          "line": 14
+        },
+        {
+          "name": "Frame.evidence",
+          "kind": "FunctionDef",
+          "line": 20
+        },
+        {
+          "name": "decode_png",
+          "kind": "FunctionDef",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "module": "core.exception",
+      "path": "core/exception.py",
+      "layer": "common",
+      "definitions": [
+        {
+          "name": "FunctionCallTimeout",
+          "kind": "ClassDef",
+          "line": 37
+        },
+        {
+          "name": "FunctionCallTimeout.__init__",
+          "kind": "FunctionDef",
+          "line": 45
+        },
+        {
+          "name": "GameDayChanged",
+          "kind": "ClassDef",
+          "line": 58
+        },
+        {
+          "name": "LogTraceback",
+          "kind": "ClassDef",
+          "line": 62
+        },
+        {
+          "name": "LogTraceback.__init__",
+          "kind": "FunctionDef",
+          "line": 63
+        },
+        {
+          "name": "LogTraceback.__str__",
+          "kind": "FunctionDef",
+          "line": 96
+        },
+        {
+          "name": "LogTraceback.log_into_file",
+          "kind": "FunctionDef",
+          "line": 83
+        },
+        {
+          "name": "OcrInternalError",
+          "kind": "ClassDef",
+          "line": 50
+        },
+        {
+          "name": "OcrInternalError.__init__",
+          "kind": "FunctionDef",
+          "line": 54
+        },
+        {
+          "name": "PackageIncorrect",
+          "kind": "ClassDef",
+          "line": 24
+        },
+        {
+          "name": "PackageIncorrect.__init__",
+          "kind": "FunctionDef",
+          "line": 32
+        },
+        {
+          "name": "RequestHumanTakeOver",
+          "kind": "ClassDef",
+          "line": 12
+        },
+        {
+          "name": "RequestHumanTakeOver.__init__",
+          "kind": "FunctionDef",
+          "line": 19
+        },
+        {
+          "name": "SharedMemoryError",
+          "kind": "ClassDef",
+          "line": 4
+        },
+        {
+          "name": "SharedMemoryError.__init__",
+          "kind": "FunctionDef",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "module": "core.game_catalog",
+      "path": "core/game_catalog.py",
+      "layer": "catalog_registry",
+      "definitions": [
+        {
+          "name": "characters",
+          "kind": "FunctionDef",
+          "line": 33
+        },
+        {
+          "name": "data",
+          "kind": "FunctionDef",
+          "line": 20
+        },
+        {
+          "name": "stage_options",
+          "kind": "FunctionDef",
+          "line": 23
+        }
+      ]
+    },
+    {
+      "module": "core.image",
+      "path": "core/image.py",
+      "layer": "recognition",
+      "definitions": [
+        {
+          "name": "ImageContext",
+          "kind": "ClassDef",
+          "line": 13
+        },
+        {
+          "name": "ImageContext.ratio",
+          "kind": "FunctionDef",
+          "line": 17
+        },
+        {
+          "name": "compare_image",
+          "kind": "FunctionDef",
+          "line": 52
+        },
+        {
+          "name": "compare_image_rgb",
+          "kind": "FunctionDef",
+          "line": 33
+        },
+        {
+          "name": "compare_rgb",
+          "kind": "FunctionDef",
+          "line": 30
+        },
+        {
+          "name": "img_cut",
+          "kind": "FunctionDef",
+          "line": 24
+        },
+        {
+          "name": "match_details",
+          "kind": "FunctionDef",
+          "line": 38
+        },
+        {
+          "name": "resize_ss_image",
+          "kind": "FunctionDef",
+          "line": 89
+        },
+        {
+          "name": "screenshot_cut",
+          "kind": "FunctionDef",
+          "line": 19
+        },
+        {
+          "name": "search_in_area",
+          "kind": "FunctionDef",
+          "line": 92
+        },
+        {
+          "name": "swipe_search_target_str",
+          "kind": "FunctionDef",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "module": "core.mad_features",
+      "path": "core/mad_features.py",
+      "layer": "recognition",
+      "definitions": [
+        {
+          "name": "blue",
+          "kind": "FunctionDef",
+          "line": 30
+        },
+        {
+          "name": "button",
+          "kind": "FunctionDef",
+          "line": 43
+        },
+        {
+          "name": "centre",
+          "kind": "FunctionDef",
+          "line": 29
+        },
+        {
+          "name": "contacts",
+          "kind": "FunctionDef",
+          "line": 53
+        },
+        {
+          "name": "detail",
+          "kind": "FunctionDef",
+          "line": 54
+        },
+        {
+          "name": "header_clear",
+          "kind": "FunctionDef",
+          "line": 45
+        },
+        {
+          "name": "inadequate",
+          "kind": "FunctionDef",
+          "line": 85
+        },
+        {
+          "name": "mochi",
+          "kind": "FunctionDef",
+          "line": 52
+        },
+        {
+          "name": "norm",
+          "kind": "FunctionDef",
+          "line": 28
+        },
+        {
+          "name": "page",
+          "kind": "FunctionDef",
+          "line": 47
+        },
+        {
+          "name": "pass_kind",
+          "kind": "FunctionDef",
+          "line": 55
+        },
+        {
+          "name": "red",
+          "kind": "FunctionDef",
+          "line": 33
+        },
+        {
+          "name": "red_positions",
+          "kind": "FunctionDef",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "module": "core.ocr.baas_ocr_client.Client",
+      "path": "core/ocr/baas_ocr_client/Client.py",
+      "layer": "ocr",
+      "definitions": [
+        {
+          "name": "BaasOcrClient",
+          "kind": "ClassDef",
+          "line": 16
+        },
+        {
+          "name": "BaasOcrClient.__init__",
+          "kind": "FunctionDef",
+          "line": 17
+        },
+        {
+          "name": "BaasOcrClient._image",
+          "kind": "FunctionDef",
+          "line": 63
+        },
+        {
+          "name": "BaasOcrClient._request",
+          "kind": "FunctionDef",
+          "line": 53
+        },
+        {
+          "name": "BaasOcrClient.ocr",
+          "kind": "FunctionDef",
+          "line": 70
+        },
+        {
+          "name": "BaasOcrClient.single_line",
+          "kind": "FunctionDef",
+          "line": 68
+        },
+        {
+          "name": "BaasOcrClient.start_server",
+          "kind": "FunctionDef",
+          "line": 26
+        },
+        {
+          "name": "BaasOcrClient.stop_server",
+          "kind": "FunctionDef",
+          "line": 72
+        }
+      ]
+    },
+    {
+      "module": "core.ocr.ocr",
+      "path": "core/ocr/ocr.py",
+      "layer": "ocr",
+      "definitions": [
+        {
+          "name": "Baas_ocr",
+          "kind": "ClassDef",
+          "line": 9
+        },
+        {
+          "name": "Baas_ocr.__init__",
+          "kind": "FunctionDef",
+          "line": 10
+        },
+        {
+          "name": "Baas_ocr.get_area_img",
+          "kind": "FunctionDef",
+          "line": 11
+        },
+        {
+          "name": "Baas_ocr.get_region_res",
+          "kind": "FunctionDef",
+          "line": 16
+        },
+        {
+          "name": "Baas_ocr.ocr_for_single_line",
+          "kind": "FunctionDef",
+          "line": 18
+        },
+        {
+          "name": "Baas_ocr.recognize_int",
+          "kind": "FunctionDef",
+          "line": 21
+        },
+        {
+          "name": "Baas_ocr.text_list",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "filtered",
+          "kind": "FunctionDef",
+          "line": 6
+        }
+      ]
+    },
+    {
+      "module": "core.paths",
+      "path": "core/paths.py",
+      "layer": "common",
+      "definitions": [
+        {
+          "name": "project_path",
+          "kind": "FunctionDef",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "module": "core.picture",
+      "path": "core/picture.py",
+      "layer": "recognition",
+      "definitions": [
+        {
+          "name": "co_detect",
+          "kind": "FunctionDef",
+          "line": 9
+        },
+        {
+          "name": "deal_with_pop_ups",
+          "kind": "FunctionDef",
+          "line": 172
+        },
+        {
+          "name": "match_any_img_feature",
+          "kind": "FunctionDef",
+          "line": 169
+        },
+        {
+          "name": "match_img_feature",
+          "kind": "FunctionDef",
+          "line": 161
+        }
+      ]
+    },
+    {
+      "module": "core.position",
+      "path": "core/position.py",
+      "layer": "recognition",
+      "definitions": [
+        {
+          "name": "get_area",
+          "kind": "FunctionDef",
+          "line": 45
+        },
+        {
+          "name": "init_image_data",
+          "kind": "FunctionDef",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "module": "core.routine_catalog",
+      "path": "core/routine_catalog.py",
+      "layer": "catalog_registry",
+      "definitions": [
+        {
+          "name": "default_routine",
+          "kind": "FunctionDef",
+          "line": 4
+        }
+      ]
+    },
+    {
+      "module": "core.routine_checkpoint",
+      "path": "core/routine_checkpoint.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "RoutineCheckpoint",
+          "kind": "ClassDef",
+          "line": 7
+        },
+        {
+          "name": "RoutineCheckpoint.__init__",
+          "kind": "FunctionDef",
+          "line": 8
+        },
+        {
+          "name": "RoutineCheckpoint.finish_group",
+          "kind": "FunctionDef",
+          "line": 29
+        },
+        {
+          "name": "RoutineCheckpoint.finish_pass",
+          "kind": "FunctionDef",
+          "line": 36
+        },
+        {
+          "name": "RoutineCheckpoint.group",
+          "kind": "FunctionDef",
+          "line": 16
+        },
+        {
+          "name": "RoutineCheckpoint.save",
+          "kind": "FunctionDef",
+          "line": 23
+        }
+      ]
+    },
+    {
+      "module": "core.runtime_state",
+      "path": "core/runtime_state.py",
+      "layer": "storage",
+      "definitions": [
+        {
+          "name": "atomic_json",
+          "kind": "FunctionDef",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "module": "core.scheduler",
+      "path": "core/scheduler.py",
+      "layer": "execution",
+      "definitions": [
+        {
+          "name": "Scheduler",
+          "kind": "ClassDef",
+          "line": 22
+        },
+        {
+          "name": "Scheduler.__init__",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "Scheduler._emit",
+          "kind": "FunctionDef",
+          "line": 68
+        },
+        {
+          "name": "Scheduler._read_config",
+          "kind": "FunctionDef",
+          "line": 33
+        },
+        {
+          "name": "Scheduler.convert_to_seconds",
+          "kind": "FunctionDef",
+          "line": 38
+        },
+        {
+          "name": "Scheduler.eligible",
+          "kind": "FunctionDef",
+          "line": 44
+        },
+        {
+          "name": "Scheduler.expand",
+          "kind": "FunctionDef",
+          "line": 54
+        },
+        {
+          "name": "Scheduler.expand.hooks",
+          "kind": "FunctionDef",
+          "line": 63
+        },
+        {
+          "name": "Scheduler.getCurrentTaskName",
+          "kind": "FunctionDef",
+          "line": 106
+        },
+        {
+          "name": "Scheduler.getWaitingTaskList",
+          "kind": "FunctionDef",
+          "line": 105
+        },
+        {
+          "name": "Scheduler.heartbeat",
+          "kind": "FunctionDef",
+          "line": 72
+        },
+        {
+          "name": "Scheduler.is_disable_period",
+          "kind": "FunctionDef",
+          "line": 41
+        },
+        {
+          "name": "Scheduler.systole",
+          "kind": "FunctionDef",
+          "line": 87
+        },
+        {
+          "name": "daily_reset_timestamp",
+          "kind": "FunctionDef",
+          "line": 11
+        }
+      ]
+    },
+    {
+      "module": "core.tasks",
+      "path": "core/tasks.py",
+      "layer": "catalog_registry",
+      "definitions": [
+        {
+          "name": "TaskSpec",
+          "kind": "ClassDef",
+          "line": 5
+        },
+        {
+          "name": "function_table",
+          "kind": "FunctionDef",
+          "line": 29
+        },
+        {
+          "name": "parameter_summary",
+          "kind": "FunctionDef",
+          "line": 36
+        },
+        {
+          "name": "task_definitions",
+          "kind": "FunctionDef",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "module": "gui.fragments.home",
+      "path": "gui/fragments/home.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "HomeFragment",
+          "kind": "ClassDef",
+          "line": 16
+        },
+        {
+          "name": "HomeFragment.__init__",
+          "kind": "FunctionDef",
+          "line": 26
+        },
+        {
+          "name": "HomeFragment._append_log",
+          "kind": "FunctionDef",
+          "line": 224
+        },
+        {
+          "name": "HomeFragment._apply_theme",
+          "kind": "FunctionDef",
+          "line": 234
+        },
+        {
+          "name": "HomeFragment._buttons",
+          "kind": "FunctionDef",
+          "line": 170
+        },
+        {
+          "name": "HomeFragment._panel",
+          "kind": "FunctionDef",
+          "line": 150
+        },
+        {
+          "name": "HomeFragment._primary",
+          "kind": "FunctionDef",
+          "line": 158
+        },
+        {
+          "name": "HomeFragment._render_logs",
+          "kind": "FunctionDef",
+          "line": 229
+        },
+        {
+          "name": "HomeFragment._scale_preview",
+          "kind": "FunctionDef",
+          "line": 205
+        },
+        {
+          "name": "HomeFragment._toggle_preview",
+          "kind": "FunctionDef",
+          "line": 194
+        },
+        {
+          "name": "HomeFragment.on_device_event",
+          "kind": "FunctionDef",
+          "line": 189
+        },
+        {
+          "name": "HomeFragment.on_log_received",
+          "kind": "FunctionDef",
+          "line": 213
+        },
+        {
+          "name": "HomeFragment.resizeEvent",
+          "kind": "FunctionDef",
+          "line": 209
+        },
+        {
+          "name": "HomeFragment.set_current_task",
+          "kind": "FunctionDef",
+          "line": 187
+        },
+        {
+          "name": "HomeFragment.set_dirty",
+          "kind": "FunctionDef",
+          "line": 165
+        },
+        {
+          "name": "HomeFragment.set_profile",
+          "kind": "FunctionDef",
+          "line": 161
+        },
+        {
+          "name": "HomeFragment.set_state",
+          "kind": "FunctionDef",
+          "line": 176
+        },
+        {
+          "name": "HomeFragment.show_frame",
+          "kind": "FunctionDef",
+          "line": 199
+        }
+      ]
+    },
+    {
+      "module": "gui.fragments.routine",
+      "path": "gui/fragments/routine.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "RoutineFragment",
+          "kind": "ClassDef",
+          "line": 304
+        },
+        {
+          "name": "RoutineFragment.__init__",
+          "kind": "FunctionDef",
+          "line": 309
+        },
+        {
+          "name": "RoutineFragment._apply_theme",
+          "kind": "FunctionDef",
+          "line": 607
+        },
+        {
+          "name": "RoutineFragment._ask_name",
+          "kind": "FunctionDef",
+          "line": 378
+        },
+        {
+          "name": "RoutineFragment._changed",
+          "kind": "FunctionDef",
+          "line": 530
+        },
+        {
+          "name": "RoutineFragment._choose_task",
+          "kind": "FunctionDef",
+          "line": 343
+        },
+        {
+          "name": "RoutineFragment._event",
+          "kind": "FunctionDef",
+          "line": 340
+        },
+        {
+          "name": "RoutineFragment._forget_card",
+          "kind": "FunctionDef",
+          "line": 392
+        },
+        {
+          "name": "RoutineFragment._load",
+          "kind": "FunctionDef",
+          "line": 454
+        },
+        {
+          "name": "RoutineFragment._make_card",
+          "kind": "FunctionDef",
+          "line": 402
+        },
+        {
+          "name": "RoutineFragment._parameters",
+          "kind": "FunctionDef",
+          "line": 523
+        },
+        {
+          "name": "RoutineFragment._refresh_rows",
+          "kind": "FunctionDef",
+          "line": 468
+        },
+        {
+          "name": "RoutineFragment._reorder",
+          "kind": "FunctionDef",
+          "line": 509
+        },
+        {
+          "name": "RoutineFragment._set_follow",
+          "kind": "FunctionDef",
+          "line": 433
+        },
+        {
+          "name": "RoutineFragment._toggle",
+          "kind": "FunctionDef",
+          "line": 488
+        },
+        {
+          "name": "RoutineFragment._update_follow_choices",
+          "kind": "FunctionDef",
+          "line": 439
+        },
+        {
+          "name": "RoutineFragment.add_instance",
+          "kind": "FunctionDef",
+          "line": 348
+        },
+        {
+          "name": "RoutineFragment.cancel_changes",
+          "kind": "FunctionDef",
+          "line": 553
+        },
+        {
+          "name": "RoutineFragment.draft",
+          "kind": "FunctionDef",
+          "line": 517
+        },
+        {
+          "name": "RoutineFragment.drop_task",
+          "kind": "FunctionDef",
+          "line": 501
+        },
+        {
+          "name": "RoutineFragment.has_unsaved_changes",
+          "kind": "FunctionDef",
+          "line": 526
+        },
+        {
+          "name": "RoutineFragment.move_task",
+          "kind": "FunctionDef",
+          "line": 493
+        },
+        {
+          "name": "RoutineFragment.on_event",
+          "kind": "FunctionDef",
+          "line": 579
+        },
+        {
+          "name": "RoutineFragment.open_settings",
+          "kind": "FunctionDef",
+          "line": 513
+        },
+        {
+          "name": "RoutineFragment.remaining_text",
+          "kind": "FunctionDef",
+          "line": 574
+        },
+        {
+          "name": "RoutineFragment.remove_instance",
+          "kind": "FunctionDef",
+          "line": 382
+        },
+        {
+          "name": "RoutineFragment.rename_instance",
+          "kind": "FunctionDef",
+          "line": 372
+        },
+        {
+          "name": "RoutineFragment.save_changes",
+          "kind": "FunctionDef",
+          "line": 539
+        },
+        {
+          "name": "RoutineFragment.set_busy",
+          "kind": "FunctionDef",
+          "line": 569
+        },
+        {
+          "name": "RoutineFragment.sync_profile",
+          "kind": "FunctionDef",
+          "line": 563
+        },
+        {
+          "name": "SweepSelector",
+          "kind": "ClassDef",
+          "line": 18
+        },
+        {
+          "name": "SweepSelector.__init__",
+          "kind": "FunctionDef",
+          "line": 21
+        },
+        {
+          "name": "SweepSelector.add_dialog",
+          "kind": "FunctionDef",
+          "line": 114
+        },
+        {
+          "name": "SweepSelector.add_dialog.filter_group",
+          "kind": "FunctionDef",
+          "line": 137
+        },
+        {
+          "name": "SweepSelector.add_dialog.update_selection",
+          "kind": "FunctionDef",
+          "line": 144
+        },
+        {
+          "name": "SweepSelector.add_stages",
+          "kind": "FunctionDef",
+          "line": 106
+        },
+        {
+          "name": "SweepSelector.edit_order",
+          "kind": "FunctionDef",
+          "line": 96
+        },
+        {
+          "name": "SweepSelector.setValue",
+          "kind": "FunctionDef",
+          "line": 54
+        },
+        {
+          "name": "SweepSelector.set_remaining",
+          "kind": "FunctionDef",
+          "line": 90
+        },
+        {
+          "name": "SweepSelector.value",
+          "kind": "FunctionDef",
+          "line": 51
+        },
+        {
+          "name": "TaskEditor",
+          "kind": "ClassDef",
+          "line": 160
+        },
+        {
+          "name": "TaskEditor.__init__",
+          "kind": "FunctionDef",
+          "line": 162
+        },
+        {
+          "name": "TaskEditor._build_parameters",
+          "kind": "FunctionDef",
+          "line": 168
+        },
+        {
+          "name": "TaskEditor._build_parameters.label",
+          "kind": "FunctionDef",
+          "line": 170
+        },
+        {
+          "name": "TaskEditor.load",
+          "kind": "FunctionDef",
+          "line": 279
+        },
+        {
+          "name": "TaskEditor.value",
+          "kind": "FunctionDef",
+          "line": 264
+        }
+      ]
+    },
+    {
+      "module": "gui.fragments.settings",
+      "path": "gui/fragments/settings.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "SettingsFragment",
+          "kind": "ClassDef",
+          "line": 18
+        },
+        {
+          "name": "SettingsFragment.__init__",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "SettingsFragment._add_row",
+          "kind": "FunctionDef",
+          "line": 130
+        },
+        {
+          "name": "SettingsFragment._apply_theme",
+          "kind": "FunctionDef",
+          "line": 260
+        },
+        {
+          "name": "SettingsFragment._choose_adb",
+          "kind": "FunctionDef",
+          "line": 169
+        },
+        {
+          "name": "SettingsFragment._choose_path",
+          "kind": "FunctionDef",
+          "line": 142
+        },
+        {
+          "name": "SettingsFragment._drafts",
+          "kind": "FunctionDef",
+          "line": 174
+        },
+        {
+          "name": "SettingsFragment._load_fields",
+          "kind": "FunctionDef",
+          "line": 148
+        },
+        {
+          "name": "SettingsFragment._mark_dirty",
+          "kind": "FunctionDef",
+          "line": 190
+        },
+        {
+          "name": "SettingsFragment._refresh_buttons",
+          "kind": "FunctionDef",
+          "line": 196
+        },
+        {
+          "name": "SettingsFragment.cancel_changes",
+          "kind": "FunctionDef",
+          "line": 231
+        },
+        {
+          "name": "SettingsFragment.has_unsaved_changes",
+          "kind": "FunctionDef",
+          "line": 186
+        },
+        {
+          "name": "SettingsFragment.save_changes",
+          "kind": "FunctionDef",
+          "line": 201
+        },
+        {
+          "name": "SettingsFragment.set_busy",
+          "kind": "FunctionDef",
+          "line": 250
+        },
+        {
+          "name": "SettingsFragment.sync_profile",
+          "kind": "FunctionDef",
+          "line": 255
+        }
+      ]
+    },
+    {
+      "module": "gui.fragments.switch",
+      "path": "gui/fragments/switch.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "SwitchFragment",
+          "kind": "ClassDef",
+          "line": 22
+        },
+        {
+          "name": "SwitchFragment.__init__",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "SwitchFragment._apply_theme",
+          "kind": "FunctionDef",
+          "line": 110
+        },
+        {
+          "name": "SwitchFragment.cancel_changes",
+          "kind": "FunctionDef",
+          "line": 55
+        },
+        {
+          "name": "SwitchFragment.has_unsaved_changes",
+          "kind": "FunctionDef",
+          "line": 89
+        },
+        {
+          "name": "SwitchFragment.save_changes",
+          "kind": "FunctionDef",
+          "line": 90
+        },
+        {
+          "name": "SwitchFragment.set_busy",
+          "kind": "FunctionDef",
+          "line": 106
+        },
+        {
+          "name": "convert_clock",
+          "kind": "FunctionDef",
+          "line": 9
+        },
+        {
+          "name": "parse_resets",
+          "kind": "FunctionDef",
+          "line": 14
+        }
+      ]
+    },
+    {
+      "module": "gui.qt_bootstrap",
+      "path": "gui/qt_bootstrap.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "configure_qt",
+          "kind": "FunctionDef",
+          "line": 14
+        }
+      ]
+    },
+    {
+      "module": "gui.theme",
+      "path": "gui/theme.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "ThemeManager",
+          "kind": "ClassDef",
+          "line": 72
+        },
+        {
+          "name": "ThemeManager.__init__",
+          "kind": "FunctionDef",
+          "line": 75
+        },
+        {
+          "name": "ThemeManager.apply",
+          "kind": "FunctionDef",
+          "line": 107
+        },
+        {
+          "name": "ThemeManager.apply_scroll_surface",
+          "kind": "FunctionDef",
+          "line": 98
+        },
+        {
+          "name": "ThemeManager.apply_surface",
+          "kind": "FunctionDef",
+          "line": 88
+        },
+        {
+          "name": "ThemeManager.colors",
+          "kind": "FunctionDef",
+          "line": 81
+        },
+        {
+          "name": "ThemeManager.surfaces",
+          "kind": "FunctionDef",
+          "line": 85
+        },
+        {
+          "name": "apply_typography",
+          "kind": "FunctionDef",
+          "line": 29
+        },
+        {
+          "name": "typography",
+          "kind": "FunctionDef",
+          "line": 22
+        },
+        {
+          "name": "ui_font",
+          "kind": "FunctionDef",
+          "line": 13
+        }
+      ]
+    },
+    {
+      "module": "gui.util.config_draft",
+      "path": "gui/util/config_draft.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "ConfigDraft",
+          "kind": "ClassDef",
+          "line": 18
+        },
+        {
+          "name": "ConfigDraft.__getattr__",
+          "kind": "FunctionDef",
+          "line": 152
+        },
+        {
+          "name": "ConfigDraft.__getitem__",
+          "kind": "FunctionDef",
+          "line": 97
+        },
+        {
+          "name": "ConfigDraft.__init__",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "ConfigDraft.__setitem__",
+          "kind": "FunctionDef",
+          "line": 100
+        },
+        {
+          "name": "ConfigDraft._clone_value",
+          "kind": "FunctionDef",
+          "line": 48
+        },
+        {
+          "name": "ConfigDraft.commit",
+          "kind": "FunctionDef",
+          "line": 105
+        },
+        {
+          "name": "ConfigDraft.dirty_keys",
+          "kind": "FunctionDef",
+          "line": 39
+        },
+        {
+          "name": "ConfigDraft.flush_and_commit",
+          "kind": "FunctionDef",
+          "line": 121
+        },
+        {
+          "name": "ConfigDraft.flush_pending_editors",
+          "kind": "FunctionDef",
+          "line": 131
+        },
+        {
+          "name": "ConfigDraft.get",
+          "kind": "FunctionDef",
+          "line": 59
+        },
+        {
+          "name": "ConfigDraft.has",
+          "kind": "FunctionDef",
+          "line": 74
+        },
+        {
+          "name": "ConfigDraft.is_dirty",
+          "kind": "FunctionDef",
+          "line": 42
+        },
+        {
+          "name": "ConfigDraft.is_draft",
+          "kind": "FunctionDef",
+          "line": 36
+        },
+        {
+          "name": "ConfigDraft.live",
+          "kind": "FunctionDef",
+          "line": 32
+        },
+        {
+          "name": "ConfigDraft.rollback",
+          "kind": "FunctionDef",
+          "line": 118
+        },
+        {
+          "name": "ConfigDraft.save",
+          "kind": "FunctionDef",
+          "line": 93
+        },
+        {
+          "name": "ConfigDraft.set",
+          "kind": "FunctionDef",
+          "line": 79
+        },
+        {
+          "name": "ConfigDraft.update",
+          "kind": "FunctionDef",
+          "line": 90
+        },
+        {
+          "name": "as_live",
+          "kind": "FunctionDef",
+          "line": 157
+        },
+        {
+          "name": "ensure_draft",
+          "kind": "FunctionDef",
+          "line": 164
+        }
+      ]
+    },
+    {
+      "module": "gui.widgets",
+      "path": "gui/widgets.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "BAASSettingCard",
+          "kind": "ClassDef",
+          "line": 50
+        },
+        {
+          "name": "BAASSettingCard.__init__",
+          "kind": "FunctionDef",
+          "line": 51
+        },
+        {
+          "name": "BAASSettingCard.eventFilter",
+          "kind": "FunctionDef",
+          "line": 56
+        },
+        {
+          "name": "CheckableListWidget",
+          "kind": "ClassDef",
+          "line": 84
+        },
+        {
+          "name": "CheckableListWidget._checkable",
+          "kind": "FunctionDef",
+          "line": 86
+        },
+        {
+          "name": "CheckableListWidget.keyPressEvent",
+          "kind": "FunctionDef",
+          "line": 106
+        },
+        {
+          "name": "CheckableListWidget.mousePressEvent",
+          "kind": "FunctionDef",
+          "line": 89
+        },
+        {
+          "name": "CheckableListWidget.mouseReleaseEvent",
+          "kind": "FunctionDef",
+          "line": 98
+        },
+        {
+          "name": "ClickFocusLineEdit",
+          "kind": "ClassDef",
+          "line": 29
+        },
+        {
+          "name": "ClickFocusLineEdit.__init__",
+          "kind": "FunctionDef",
+          "line": 39
+        },
+        {
+          "name": "ClickFocusLineEdit.eventFilter",
+          "kind": "FunctionDef",
+          "line": 44
+        },
+        {
+          "name": "DragGrip",
+          "kind": "ClassDef",
+          "line": 115
+        },
+        {
+          "name": "DragGrip.__init__",
+          "kind": "FunctionDef",
+          "line": 118
+        },
+        {
+          "name": "DragGrip.mouseMoveEvent",
+          "kind": "FunctionDef",
+          "line": 130
+        },
+        {
+          "name": "DragGrip.mousePressEvent",
+          "kind": "FunctionDef",
+          "line": 126
+        },
+        {
+          "name": "ElidedLabel",
+          "kind": "ClassDef",
+          "line": 64
+        },
+        {
+          "name": "ElidedLabel.__init__",
+          "kind": "FunctionDef",
+          "line": 65
+        },
+        {
+          "name": "ElidedLabel._elide",
+          "kind": "FunctionDef",
+          "line": 76
+        },
+        {
+          "name": "ElidedLabel.resizeEvent",
+          "kind": "FunctionDef",
+          "line": 79
+        },
+        {
+          "name": "ElidedLabel.setText",
+          "kind": "FunctionDef",
+          "line": 71
+        },
+        {
+          "name": "FuncLabel",
+          "kind": "ClassDef",
+          "line": 16
+        },
+        {
+          "name": "FuncLabel.__init__",
+          "kind": "FunctionDef",
+          "line": 19
+        },
+        {
+          "name": "FuncLabel.connect_customized_slot",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "FuncLabel.mouseReleaseEvent",
+          "kind": "FunctionDef",
+          "line": 22
+        },
+        {
+          "name": "TaskCard",
+          "kind": "ClassDef",
+          "line": 141
+        },
+        {
+          "name": "TaskCard.__init__",
+          "kind": "FunctionDef",
+          "line": 146
+        },
+        {
+          "name": "TaskCard._menu",
+          "kind": "FunctionDef",
+          "line": 211
+        },
+        {
+          "name": "TaskCard.apply_theme",
+          "kind": "FunctionDef",
+          "line": 247
+        },
+        {
+          "name": "TaskCard.dragEnterEvent",
+          "kind": "FunctionDef",
+          "line": 232
+        },
+        {
+          "name": "TaskCard.dropEvent",
+          "kind": "FunctionDef",
+          "line": 235
+        },
+        {
+          "name": "TaskCard.eventFilter",
+          "kind": "FunctionDef",
+          "line": 214
+        },
+        {
+          "name": "TaskCard.set_busy",
+          "kind": "FunctionDef",
+          "line": 224
+        },
+        {
+          "name": "TaskCard.set_expanded",
+          "kind": "FunctionDef",
+          "line": 219
+        },
+        {
+          "name": "TaskCard.set_result",
+          "kind": "FunctionDef",
+          "line": 241
+        }
+      ]
+    },
+    {
+      "module": "main",
+      "path": "main.py",
+      "layer": "bootstrap",
+      "definitions": [
+        {
+          "name": "Main",
+          "kind": "ClassDef",
+          "line": 12
+        },
+        {
+          "name": "Main.__init__",
+          "kind": "FunctionDef",
+          "line": 14
+        },
+        {
+          "name": "Main.close",
+          "kind": "FunctionDef",
+          "line": 32
+        },
+        {
+          "name": "Main.get_ocr",
+          "kind": "FunctionDef",
+          "line": 20
+        },
+        {
+          "name": "Main.start",
+          "kind": "FunctionDef",
+          "line": 27
+        },
+        {
+          "name": "create_window",
+          "kind": "FunctionDef",
+          "line": 51
+        },
+        {
+          "name": "diagnostics",
+          "kind": "FunctionDef",
+          "line": 40
+        },
+        {
+          "name": "main",
+          "kind": "FunctionDef",
+          "line": 67
+        },
+        {
+          "name": "repository",
+          "kind": "FunctionDef",
+          "line": 38
+        }
+      ]
+    },
+    {
+      "module": "module",
+      "path": "module/__init__.py",
+      "layer": "game_tasks",
+      "definitions": []
+    },
+    {
+      "module": "module.academy_sweep",
+      "path": "module/academy_sweep.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "category_selected",
+          "kind": "FunctionDef",
+          "line": 6
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 15
+        },
+        {
+          "name": "navigate",
+          "kind": "FunctionDef",
+          "line": 11
+        }
+      ]
+    },
+    {
+      "module": "module.achievements",
+      "path": "module/achievements.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "module": "module.claim_all",
+      "path": "module/claim_all.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 4
+        },
+        {
+          "name": "implement.tasks",
+          "kind": "FunctionDef",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "module": "module.daily_rewards",
+      "path": "module/daily_rewards.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "collect_all",
+          "kind": "FunctionDef",
+          "line": 10
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 16
+        }
+      ]
+    },
+    {
+      "module": "module.dating",
+      "path": "module/dating.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "contacts",
+          "kind": "FunctionDef",
+          "line": 8
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 38
+        },
+        {
+          "name": "select_character",
+          "kind": "FunctionDef",
+          "line": 14
+        }
+      ]
+    },
+    {
+      "module": "module.flara_sweep",
+      "path": "module/flara_sweep.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "module": "module.gold_shop",
+      "path": "module/gold_shop.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "count_text",
+          "kind": "FunctionDef",
+          "line": 13
+        },
+        {
+          "name": "get_item_position",
+          "kind": "FunctionDef",
+          "line": 34
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 75
+        },
+        {
+          "name": "prepare_purchase",
+          "kind": "FunctionDef",
+          "line": 52
+        },
+        {
+          "name": "return_to_shop",
+          "kind": "FunctionDef",
+          "line": 65
+        },
+        {
+          "name": "set_quantity",
+          "kind": "FunctionDef",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "module": "module.mail",
+      "path": "module/mail.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "module": "module.mall",
+      "path": "module/mall.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 14
+        },
+        {
+          "name": "menu_item",
+          "kind": "FunctionDef",
+          "line": 7
+        },
+        {
+          "name": "selected",
+          "kind": "FunctionDef",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "module": "module.normal_sweep",
+      "path": "module/normal_sweep.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 19
+        },
+        {
+          "name": "navigate",
+          "kind": "FunctionDef",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "module": "module.pass_rewards",
+      "path": "module/pass_rewards.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "cards",
+          "kind": "FunctionDef",
+          "line": 60
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 86
+        },
+        {
+          "name": "missions",
+          "kind": "FunctionDef",
+          "line": 37
+        },
+        {
+          "name": "rewards",
+          "kind": "FunctionDef",
+          "line": 69
+        },
+        {
+          "name": "screen",
+          "kind": "FunctionDef",
+          "line": 16
+        },
+        {
+          "name": "signature",
+          "kind": "FunctionDef",
+          "line": 25
+        },
+        {
+          "name": "swipe",
+          "kind": "FunctionDef",
+          "line": 20
+        },
+        {
+          "name": "to_start",
+          "kind": "FunctionDef",
+          "line": 29
+        },
+        {
+          "name": "yellow",
+          "kind": "FunctionDef",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "module": "module.procurement_sweep",
+      "path": "module/procurement_sweep.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "module": "module.restart",
+      "path": "module/restart.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "deal_with_popup",
+          "kind": "FunctionDef",
+          "line": 30
+        },
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 7
+        },
+        {
+          "name": "open_page",
+          "kind": "FunctionDef",
+          "line": 24
+        },
+        {
+          "name": "to_main_page",
+          "kind": "FunctionDef",
+          "line": 13
+        }
+      ]
+    },
+    {
+      "module": "module.stamina_claim",
+      "path": "module/stamina_claim.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "implement",
+          "kind": "FunctionDef",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "module": "module.sweep_utils",
+      "path": "module/sweep_utils.py",
+      "layer": "game_tasks",
+      "definitions": [
+        {
+          "name": "SweepBatch",
+          "kind": "ClassDef",
+          "line": 72
+        },
+        {
+          "name": "denied_batch",
+          "kind": "FunctionDef",
+          "line": 91
+        },
+        {
+          "name": "enter",
+          "kind": "FunctionDef",
+          "line": 44
+        },
+        {
+          "name": "list_balance",
+          "kind": "FunctionDef",
+          "line": 77
+        },
+        {
+          "name": "preview_balance",
+          "kind": "FunctionDef",
+          "line": 82
+        },
+        {
+          "name": "return_to_list",
+          "kind": "FunctionDef",
+          "line": 131
+        },
+        {
+          "name": "run_plans",
+          "kind": "FunctionDef",
+          "line": 135
+        },
+        {
+          "name": "select_stage",
+          "kind": "FunctionDef",
+          "line": 50
+        },
+        {
+          "name": "selected",
+          "kind": "FunctionDef",
+          "line": 23
+        },
+        {
+          "name": "stage_text",
+          "kind": "FunctionDef",
+          "line": 14
+        },
+        {
+          "name": "stage_text_area",
+          "kind": "FunctionDef",
+          "line": 17
+        },
+        {
+          "name": "start_sweep",
+          "kind": "FunctionDef",
+          "line": 102
+        }
+      ]
+    },
+    {
+      "module": "window",
+      "path": "window.py",
+      "layer": "ui",
+      "definitions": [
+        {
+          "name": "RuntimeSignals",
+          "kind": "ClassDef",
+          "line": 16
+        },
+        {
+          "name": "Window",
+          "kind": "ClassDef",
+          "line": 20
+        },
+        {
+          "name": "Window.__init__",
+          "kind": "FunctionDef",
+          "line": 21
+        },
+        {
+          "name": "Window._apply_theme",
+          "kind": "FunctionDef",
+          "line": 92
+        },
+        {
+          "name": "Window._finish_close",
+          "kind": "FunctionDef",
+          "line": 187
+        },
+        {
+          "name": "Window._fit_initial_size",
+          "kind": "FunctionDef",
+          "line": 87
+        },
+        {
+          "name": "Window._on_runtime_event",
+          "kind": "FunctionDef",
+          "line": 152
+        },
+        {
+          "name": "Window._open_records",
+          "kind": "FunctionDef",
+          "line": 170
+        },
+        {
+          "name": "Window._page_dialog",
+          "kind": "FunctionDef",
+          "line": 71
+        },
+        {
+          "name": "Window._refresh_preview",
+          "kind": "FunctionDef",
+          "line": 144
+        },
+        {
+          "name": "Window._request_stop",
+          "kind": "FunctionDef",
+          "line": 139
+        },
+        {
+          "name": "Window._set_state",
+          "kind": "FunctionDef",
+          "line": 119
+        },
+        {
+          "name": "Window._show_scheduler",
+          "kind": "FunctionDef",
+          "line": 83
+        },
+        {
+          "name": "Window._start",
+          "kind": "FunctionDef",
+          "line": 124
+        },
+        {
+          "name": "Window._update_profile",
+          "kind": "FunctionDef",
+          "line": 111
+        },
+        {
+          "name": "Window.closeEvent",
+          "kind": "FunctionDef",
+          "line": 175
+        },
+        {
+          "name": "Window.worker",
+          "kind": "FunctionDef",
+          "line": 69
+        }
+      ]
+    }
+  ],
+  "imports": [
+    {
+      "from": "core.Mad_thread",
+      "to": "core.config.config_set",
+      "type_checking_only": false,
+      "line": 18,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.config.repository",
+      "type_checking_only": false,
+      "line": 16,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.device.Control",
+      "type_checking_only": false,
+      "line": 24,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.device.Screenshot",
+      "type_checking_only": false,
+      "line": 25,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.device.connection",
+      "type_checking_only": false,
+      "line": 23,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 22,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 21,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.image",
+      "type_checking_only": false,
+      "line": 28,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 297,
+      "scope": "MadThread.match"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.ocr.baas_ocr_client.Client",
+      "type_checking_only": false,
+      "line": 27,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.ocr.ocr",
+      "type_checking_only": false,
+      "line": 26,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.position",
+      "type_checking_only": false,
+      "line": 28,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.routine_checkpoint",
+      "type_checking_only": false,
+      "line": 17,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.runtime_state",
+      "type_checking_only": false,
+      "line": 29,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.scheduler",
+      "type_checking_only": false,
+      "line": 19,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 20,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "module.restart",
+      "type_checking_only": false,
+      "line": 314,
+      "scope": "MadThread.to_main_page"
+    },
+    {
+      "from": "core.Mad_thread",
+      "to": "module.restart",
+      "type_checking_only": false,
+      "line": 317,
+      "scope": "MadThread.open_page"
+    },
+    {
+      "from": "core.color",
+      "to": "core.Baas_thread",
+      "type_checking_only": true,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config",
+      "to": "core.config.repository",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.config_set",
+      "to": "core.config.repository",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.default_config",
+      "to": "core.routine_catalog",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.default_config",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.repository",
+      "to": "core.config.default_config",
+      "type_checking_only": false,
+      "line": 16,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.repository",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 15,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.repository",
+      "to": "core.paths",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.repository",
+      "to": "core.runtime_state",
+      "type_checking_only": false,
+      "line": 13,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.config.repository",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 14,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.Control",
+      "to": "core.device.control.adb",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.Screenshot",
+      "to": "core.device.screenshot.adb",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.connection",
+      "to": "core.device.mumu_cli",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.connection",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.mumu_cli",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.runtime",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.device.screenshot.adb",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.image",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.image",
+      "to": "core.position",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.mad_features",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.mad_features",
+      "to": "core.image",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.baas_ocr_client.Client",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.baas_ocr_client.Client",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.baas_ocr_client.Client",
+      "to": "core.paths",
+      "type_checking_only": false,
+      "line": 11,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.baas_ocr_client.Client",
+      "to": "core.runtime_state",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.ocr",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.ocr.ocr",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.picture",
+      "to": "core.color",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.picture",
+      "to": "core.color",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.picture",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.picture",
+      "to": "core.image",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.picture",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 164,
+      "scope": "match_img_feature"
+    },
+    {
+      "from": "core.picture",
+      "to": "module.restart",
+      "type_checking_only": false,
+      "line": 173,
+      "scope": "deal_with_pop_ups"
+    },
+    {
+      "from": "core.position",
+      "to": "core.device.runtime",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.position",
+      "to": "core.paths",
+      "type_checking_only": false,
+      "line": 11,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.routine_catalog",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.routine_checkpoint",
+      "to": "core.runtime_state",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.scheduler",
+      "to": "core.config.repository",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "core.tasks",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 44,
+      "scope": "parameter_summary"
+    },
+    {
+      "from": "core.tasks",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 46,
+      "scope": "parameter_summary"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.claim_all",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.dating",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.flara_sweep",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.gold_shop",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.mail",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.normal_sweep",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.procurement_sweep",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.restart",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "core.tasks",
+      "to": "module.stamina_claim",
+      "type_checking_only": false,
+      "line": 30,
+      "scope": "function_table"
+    },
+    {
+      "from": "gui.fragments.home",
+      "to": "gui.theme",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "core.config.default_config",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "core.config.repository",
+      "type_checking_only": false,
+      "line": 11,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 13,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "core.routine_catalog",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "gui.theme",
+      "type_checking_only": false,
+      "line": 15,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.routine",
+      "to": "gui.widgets",
+      "type_checking_only": false,
+      "line": 14,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.settings",
+      "to": "core.config.config_set",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.settings",
+      "to": "gui.util.config_draft",
+      "type_checking_only": false,
+      "line": 13,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.settings",
+      "to": "gui.widgets",
+      "type_checking_only": false,
+      "line": 15,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.fragments.switch",
+      "to": "core.config.schedule_fields",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "gui.widgets",
+      "to": "gui.theme",
+      "type_checking_only": false,
+      "line": 13,
+      "scope": "<module>"
+    },
+    {
+      "from": "main",
+      "to": "core.Mad_thread",
+      "type_checking_only": false,
+      "line": 28,
+      "scope": "Main.start"
+    },
+    {
+      "from": "main",
+      "to": "core.config",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "main",
+      "to": "core.ocr.baas_ocr_client.Client",
+      "type_checking_only": false,
+      "line": 21,
+      "scope": "Main.get_ocr"
+    },
+    {
+      "from": "main",
+      "to": "core.paths",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "main",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "main",
+      "to": "gui.qt_bootstrap",
+      "type_checking_only": false,
+      "line": 52,
+      "scope": "create_window"
+    },
+    {
+      "from": "main",
+      "to": "gui.qt_bootstrap",
+      "type_checking_only": false,
+      "line": 114,
+      "scope": "main"
+    },
+    {
+      "from": "main",
+      "to": "gui.theme",
+      "type_checking_only": false,
+      "line": 60,
+      "scope": "create_window"
+    },
+    {
+      "from": "main",
+      "to": "window",
+      "type_checking_only": false,
+      "line": 64,
+      "scope": "create_window"
+    },
+    {
+      "from": "module.academy_sweep",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.academy_sweep",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.academy_sweep",
+      "to": "module.sweep_utils",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.achievements",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.achievements",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.achievements",
+      "to": "module.daily_rewards",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "module.achievements",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "implement"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "module.daily_rewards",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "implement"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "module.mail",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "implement"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "module.mall",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "implement"
+    },
+    {
+      "from": "module.claim_all",
+      "to": "module.pass_rewards",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "implement"
+    },
+    {
+      "from": "module.daily_rewards",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.daily_rewards",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.dating",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.dating",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.flara_sweep",
+      "to": "module.academy_sweep",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.gold_shop",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.gold_shop",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.gold_shop",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.mail",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.mail",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.mall",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.mall",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.normal_sweep",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.normal_sweep",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.normal_sweep",
+      "to": "module.sweep_utils",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.pass_rewards",
+      "to": "core.image",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.pass_rewards",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.pass_rewards",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.procurement_sweep",
+      "to": "module.academy_sweep",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.restart",
+      "to": "core.exception",
+      "type_checking_only": false,
+      "line": 5,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.restart",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 4,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.restart",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.stamina_claim",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 3,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.stamina_claim",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 2,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.sweep_utils",
+      "to": "core.color",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.sweep_utils",
+      "to": "core.game_catalog",
+      "type_checking_only": false,
+      "line": 8,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.sweep_utils",
+      "to": "core.image",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.sweep_utils",
+      "to": "core.mad_features",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "module.sweep_utils",
+      "to": "core.picture",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "core.config",
+      "type_checking_only": false,
+      "line": 6,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "core.tasks",
+      "type_checking_only": false,
+      "line": 7,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "gui.fragments.home",
+      "type_checking_only": false,
+      "line": 8,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "gui.fragments.routine",
+      "type_checking_only": false,
+      "line": 11,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "gui.fragments.settings",
+      "type_checking_only": false,
+      "line": 9,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "gui.fragments.switch",
+      "type_checking_only": false,
+      "line": 10,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "gui.theme",
+      "type_checking_only": false,
+      "line": 12,
+      "scope": "<module>"
+    },
+    {
+      "from": "window",
+      "to": "main",
+      "type_checking_only": false,
+      "line": 13,
+      "scope": "<module>"
+    }
+  ]
+}

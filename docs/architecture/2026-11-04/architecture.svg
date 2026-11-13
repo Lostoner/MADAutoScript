@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="982" viewBox="0 0 1600 982" role="img" aria-labelledby="title desc">
+<title id="title">MAD 日常自动化：执行与存储</title><desc id="desc">从 GUI 或 CLI 启动 Main 和 MadThread。工作线程向 Scheduler 请求任务组，自行调用 module 处理器，通过 ADB 与本机 OCR 操作游戏。配置、调度时间和扫荡剩余次数与步骤断点分别保存。</desc>
+<rect x="0" y="0" width="1600" height="982" rx="0" fill="#F6F7F4" stroke="none" stroke-width="1.5"/>
+<rect x="54" y="41" width="6" height="88" rx="1" fill="#006E65" stroke="none" stroke-width="1.5"/>
+<text x="79" y="65" font-family="Microsoft YaHei" font-size="21" font-weight="bold" fill="#006E65">MAD  /  架构基线</text>
+<text x="77" y="125" font-family="Microsoft YaHei" font-size="48" font-weight="bold" fill="#162F38">一轮日常怎样执行，又怎样续跑？</text>
+<text x="1258" y="62" font-family="Microsoft YaHei" font-size="25" font-weight="bold" fill="#162F38">0.7.5 开发工作树</text>
+<text x="1258" y="99" font-family="Segoe UI" font-size="21" font-weight="normal" fill="#546C70">2026-11-04   /   Schema 6</text>
+<polyline points="55,156 1545,156" fill="none" stroke="#CBD7D4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="56" y="202" font-family="Microsoft YaHei" font-size="27" font-weight="bold" fill="#162F38">执行路径</text>
+<text x="196" y="201" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#546C70">箭头表示调用或任务组的返回方向</text>
+<text x="1110" y="202" font-family="Microsoft YaHei" font-size="27" font-weight="bold" fill="#162F38">持久化边界</text>
+<polyline points="329,293 361,293" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="365,293 354,287 354,299" fill="#56716F"/>
+<polyline points="674,293 714,293" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="718,293 707,287 707,299" fill="#56716F"/>
+<polyline points="880,352 880,375 269,375 269,394" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="269,399 263,388 275,388" fill="#56716F"/>
+<polyline points="473,471 533,471" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="539,471 528,465 528,477" fill="#56716F"/>
+<polyline points="800,540 800,576" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="800,581 794,570 806,570" fill="#56716F"/>
+<polyline points="539,656 480,656" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="474,656 485,650 485,662" fill="#56716F"/>
+<polyline points="269,723 269,785" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="269,789 263,778 275,778" fill="#56716F"/>
+<polyline points="269,753 800,753 800,784" fill="none" stroke="#56716F" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="800,789 794,778 806,778" fill="#56716F"/>
+<circle cx="269" cy="753" r="4" fill="#56716F"/>
+<rect x="55" y="231" width="274" height="121" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="75" y="263" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#006E65">01</text>
+<text x="112" y="263" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#006E65">入口</text>
+<text x="75" y="304" font-family="Segoe UI" font-size="32" font-weight="bold" fill="#162F38">GUI  /  CLI</text>
+<text x="75" y="335" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#37535C">发起一次或持续运行</text>
+<rect x="366" y="231" width="308" height="121" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="386" y="263" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#006E65">02</text>
+<text x="423" y="263" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#006E65">应用生命周期</text>
+<text x="386" y="304" font-family="Segoe UI" font-size="32" font-weight="bold" fill="#162F38">Main.start</text>
+<text x="386" y="335" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#37535C">创建工作线程，共享 OCR 服务</text>
+<rect x="719" y="231" width="334" height="121" rx="10" fill="#173D4A" stroke="none" stroke-width="1.5"/>
+<text x="740" y="263" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#A0DED0">03</text>
+<text x="777" y="263" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#A0DED0">运行编排</text>
+<text x="740" y="304" font-family="Segoe UI" font-size="32" font-weight="bold" fill="#FFFFFF">MadThread</text>
+<text x="740" y="335" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#DFEFED">连接设备，请求下一个任务组</text>
+<rect x="55" y="400" width="418" height="140" rx="10" fill="#E8F3EE" stroke="#BDD5CD" stroke-width="1.5"/>
+<text x="76" y="432" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#006E65">04</text>
+<text x="113" y="432" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#006E65">选择与展开</text>
+<text x="76" y="476" font-family="Segoe UI" font-size="31" font-weight="bold" fill="#162F38">Scheduler</text>
+<text x="76" y="513" font-family="Microsoft YaHei" font-size="18" font-weight="normal" fill="#37535C">按模式筛选实例，返回前置 / 主 / 后置步骤</text>
+<rect x="540" y="400" width="513" height="140" rx="10" fill="#173D4A" stroke="none" stroke-width="1.5"/>
+<text x="561" y="432" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#A0DED0">05</text>
+<text x="598" y="432" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#A0DED0">仍由工作线程执行</text>
+<text x="561" y="476" font-family="Segoe UI" font-size="30" font-weight="bold" fill="#FFFFFF">MadThread.run_group</text>
+<text x="561" y="513" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#DFEFED">按实例取参数，交给 solve 按任务类型分派</text>
+<rect x="540" y="582" width="513" height="141" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="561" y="615" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#006E65">06</text>
+<text x="598" y="615" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#006E65">游戏任务</text>
+<text x="561" y="658" font-family="Segoe UI" font-size="32" font-weight="bold" fill="#162F38">module/*.py</text>
+<text x="561" y="696" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">扫荡、采购、奖励领取等处理器</text>
+<rect x="55" y="582" width="418" height="141" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="76" y="615" font-family="Segoe UI" font-size="17" font-weight="bold" fill="#006E65">07</text>
+<text x="113" y="615" font-family="Microsoft YaHei" font-size="18" font-weight="bold" fill="#006E65">共用操作</text>
+<text x="76" y="658" font-family="Microsoft YaHei" font-size="30" font-weight="bold" fill="#162F38">识别、导航与输入</text>
+<text x="76" y="696" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">处理器调用工作线程提供的游戏操作</text>
+<rect x="55" y="790" width="418" height="114" rx="10" fill="#F0F4F3" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="76" y="835" font-family="Microsoft YaHei" font-size="27" font-weight="bold" fill="#162F38">本机 ADB  →  MuMu</text>
+<text x="76" y="876" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">获取画面，发送点击或滑动</text>
+<rect x="540" y="790" width="513" height="114" rx="10" fill="#F0F4F3" stroke="#CBD7D4" stroke-width="1.5"/>
+<text x="561" y="835" font-family="Microsoft YaHei" font-size="27" font-weight="bold" fill="#162F38">本机 HTTP  →  BAAS OCR</text>
+<text x="561" y="876" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">按需送入截图区域，取回文字识别结果</text>
+<rect x="1109" y="231" width="437" height="344" rx="10" fill="#FFFFFF" stroke="#CBD7D4" stroke-width="1.5"/>
+<rect x="1109" y="231" width="7" height="344" rx="2" fill="#65988B" stroke="none" stroke-width="1.5"/>
+<text x="1135" y="274" font-family="Microsoft YaHei" font-size="25" font-weight="bold" fill="#006E65">配置、调度与扫荡剩余次数</text>
+<text x="1135" y="316" font-family="Segoe UI" font-size="31" font-weight="bold" fill="#162F38">ProfileRepository</text>
+<text x="1135" y="350" font-family="Segoe UI" font-size="21" font-weight="normal" fill="#546C70">config.json   /   event.json</text>
+<polyline points="1135,373 1518,373" fill="none" stroke="#CBD7D4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="1135" y="410" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">界面保存配置；工作线程按实例读参数。</text>
+<text x="1135" y="452" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">Scheduler 读取实例，组结束后通过</text>
+<text x="1135" y="482" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">仓库更新下次运行时间 next_tick。</text>
+<text x="1135" y="525" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">扫荡处理器按实扫次数扣减剩余量。</text>
+<rect x="1109" y="600" width="437" height="304" rx="10" fill="#FCF6EB" stroke="#DED2BB" stroke-width="1.5"/>
+<rect x="1109" y="600" width="7" height="304" rx="2" fill="#B78A48" stroke="none" stroke-width="1.5"/>
+<text x="1135" y="645" font-family="Microsoft YaHei" font-size="24" font-weight="bold" fill="#89591F">中断续跑：本轮执行到哪里</text>
+<text x="1135" y="689" font-family="Segoe UI" font-size="31" font-weight="bold" fill="#162F38">RoutineCheckpoint</text>
+<text x="1135" y="724" font-family="Segoe UI" font-size="19" font-weight="normal" fill="#546C70">state/&lt;profile&gt;/*-checkpoint.json</text>
+<polyline points="1135,747 1518,747" fill="none" stroke="#DED2BB" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="1135" y="784" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">工作线程恢复任务组、逐步写入断点。</text>
+<text x="1135" y="826" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">单次模式完成本轮即清除；持续模式</text>
+<text x="1135" y="856" font-family="Microsoft YaHei" font-size="20" font-weight="normal" fill="#37535C">按组清除。断点不保存扫荡剩余次数。</text>
+<polyline points="55,937 1545,937" fill="none" stroke="#CBD7D4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="55" y="965" font-family="Microsoft YaHei" font-size="19" font-weight="normal" fill="#37535C">阅读提示：调度器决定“做什么”；工作线程才调用游戏操作。</text>
+<text x="1330" y="965" font-family="Segoe UI" font-size="18" font-weight="bold" fill="#546C70">MAD  /  ARCHITECTURE</text>
+</svg>

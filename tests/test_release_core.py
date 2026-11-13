@@ -36,9 +36,10 @@ class ReleaseCore(TestCase):
             before = repo.patch_config({'routine': routine})
             worker = MadThread(repo)
             worker.template = Mock(return_value=True)
+            worker.line = Mock(return_value='100/114')
             counts = []
             worker.to_main_page = Mock()
-            with patch.object(sweep_utils, 'enter'), patch.object(sweep_utils, 'select_stage', return_value=True), patch.object(sweep_utils, 'return_to_list'), patch.object(sweep_utils, 'start_sweep', side_effect=lambda w, n: (counts.append(n) or True, n)):
+            with patch.object(sweep_utils, 'enter'), patch.object(sweep_utils, 'select_stage', return_value=True), patch.object(sweep_utils, 'return_to_list'), patch.object(sweep_utils, 'start_sweep', side_effect=lambda w, n, cost: (counts.append(n) or sweep_utils.SweepBatch(n))):
                 self.assertTrue(sweep_utils.run_plans(worker, 'mad.normal_sweep', 'normal_stage', Mock()))
             self.assertEqual(counts, [2, 3])
             worker.to_main_page.assert_not_called()

@@ -32,8 +32,7 @@ class Scheduler:
 
     def _read_config(self):
         self._event_config=self.repository.load_events()
-        self.event_map={e['func_name']:e['event_name'] for e in self._event_config}
-        self.funcs=set(self.event_map)
+        self.instances={e['instance_id']:e for e in self._event_config}
 
     @staticmethod
     def convert_to_seconds(hour,minute,second=0): return hour*3600+minute*60+second
@@ -48,13 +47,23 @@ class Scheduler:
         now=datetime.fromtimestamp(self.clock(),ZoneInfo(zone))
         seconds=self.convert_to_seconds(now.hour,now.minute,now.second)
         return sorted([e for e in self._event_config
-                       if (e['func_name'] in task_ids if task_ids is not None else e['enabled'])
+                       if (once or not e.get('follow_after'))
+                       and (e['instance_id'] in task_ids if task_ids is not None else e['enabled'])
                        and (once or e['next_tick']<=self.clock()) and not self.is_disable_period(e,seconds)],key=lambda e:e['priority'])
 
-    def expand(self,event):
-        return {'current_task':event['func_name'],
-                'pre_task':[x for x in event['pre_task'] if x in self.funcs],
-                'post_task':[x for x in event['post_task'] if x in self.funcs]}
+    def expand(self,event,*,once=False):
+        # Legacy explicit hooks can reference disabled original rows. Linked
+        # copies, instead, obey their own switch and the parent's trigger.
+        root=event['instance_id']
+        zone=self.repository.load_config()['scheduling']['timezone']
+        now=datetime.fromtimestamp(self.clock(),ZoneInfo(zone))
+        seconds=self.convert_to_seconds(now.hour,now.minute,now.second)
+        followers=[e['instance_id'] for e in sorted(self._event_config,key=lambda e:e['priority'])
+                   if not once and e.get('follow_after')==root and e['enabled'] and not self.is_disable_period(e,seconds)]
+        def hooks(refs):
+            return [key for key in refs if key in self.instances and not self.instances[key].get('follow_after')]
+        return {'current_task':root,'pre_task':hooks(event['pre_task']),
+                'post_task':hooks(event['post_task'])+followers}
 
     def _emit(self,names):
         if self.update_signal is not None:
@@ -78,7 +87,7 @@ class Scheduler:
     def systole(self,task_name,next_time=0,force_task=False):
         if not force_task and (not self._current_task or task_name!=self._current_task['current_task']): return None
         self._read_config()
-        event=next(e for e in self._event_config if e['func_name']==task_name)
+        event=self.instances[task_name]
         now=self.clock()
         if next_time>0: tick=now+next_time
         else:
@@ -90,7 +99,7 @@ class Scheduler:
                 tick=min(tick,reset.timestamp())
             boundary=daily_reset_timestamp(self.repository.load_config()['scheduling']['reset'],now,upcoming=True)
             if boundary is not None: tick=min(tick,boundary)
-        self.repository.save_events([{'func_name':task_name,'next_tick':int(tick)}],fields={'next_tick'})
+        self.repository.save_events([{'instance_id':task_name,'next_tick':int(tick)}],fields={'next_tick'})
         return tick
 
     def getWaitingTaskList(self): return self._waitingTaskDisplayQueue

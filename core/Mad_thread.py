@@ -13,7 +13,8 @@ import time
 import traceback
 import uuid
 import cv2
-from core.config.repository import ProfileRepository
+from core.config.repository import ProfileRepository, instance_params
+from core.routine_checkpoint import RoutineCheckpoint
 from core.config.config_set import ConfigSet
 from core.scheduler import Scheduler, daily_reset_timestamp
 from core.tasks import TASKS, function_table
@@ -32,12 +33,17 @@ class _Events(logging.Handler):
     def emit(self,record): self.worker.emit('log',record.getMessage(),level=record.levelname)
 
 class MadThread:
-    def __init__(self,repository,emit_event=None,resources=None):
+    def __init__(self,repository,emit_event=None,resources=None,plan_pass=None,material_sync=False):
         self.repository=repository if isinstance(repository,ProfileRepository) else ProfileRepository(repository)
         self.config_set=ConfigSet(self.repository)
         self.config=self.repository.load_config()
         self.emit_event=emit_event or (lambda event:None)
         self.resources=resources
+        self.plan_pass=plan_pass
+        self.material_repository=plan_pass.store.repository if plan_pass else self.repository
+        self.material_sync=material_sync
+        self.material_context=None
+        self.plan_date=plan_pass.day if plan_pass else None
         self._stop_event=threading.Event()
         self.guard=RunControl(self._stop_event)
         self.flag_run=False
@@ -56,6 +62,7 @@ class MadThread:
         self._cache={}
         self.next_time=0
         self.current_task=None
+        self.current_instance_id=None
         self.task_params={}
         self.task_details={}
         self.date_popup_handled=False
@@ -70,6 +77,8 @@ class MadThread:
     @property
     def is_running(self): return bool(self._thread and self._thread.is_alive())
     def emit(self,kind,message='',**fields):
+        if self.material_sync: fields['material_sync']=True
+        if self.plan_date: fields['plan_date']=self.plan_date
         self.emit_event({'kind':kind,'message':message,'time':datetime.now().isoformat(),**fields})
     def _state(self,state,message=''):
         self.state=state
@@ -116,49 +125,73 @@ class MadThread:
         self.logger.addHandler(logfile)
         results=[]
         terminal='failed'
+        lease=None
         try:
+            acquire=getattr(self.resources,'acquire_execution',None)
+            if callable(acquire): lease=acquire()
             if new_round: self.repository.reset_progress()
+            if self.plan_pass: self.plan_pass.started(self.run_dir)
             self.connect()
             self._state('running','已连接；按已保存任务配置执行。')
             if not self.solve('restart'): raise RuntimeError(self.error or '启动导航未完成')
-            once=self.scheduler.eligible(once=True,task_ids=set(task_ids) if task_ids else None) if not continuous else None
-            self.emit('queue','',tasks=[e['event_name'] for e in once] if once is not None else [])
+            if self.material_sync:
+                from module.material_sweep import sync
+                sync(self)
+                terminal='succeeded'
+                return
+            def prepare_pass():
+                selection=set(task_ids) if task_ids else None
+                epoch=self.repository.load_config()['last_refresh_config_time']
+                cursor=self.plan_pass or RoutineCheckpoint(self.repository.data_root/'state'/self.repository.profile_id,
+                                                           continuous,selection,epoch)
+                if any(e['func_name']=='mad.material_sweep' for e in self.scheduler.instances.values()):
+                    from core.material_store import MaterialStore
+                    if self.plan_pass:
+                        self.material_context='plan:'+self.plan_date
+                    else:
+                        if not cursor.material_context: cursor.material_context='routine:'+uuid.uuid4().hex
+                        self.material_context=cursor.material_context
+                        cursor.save()
+                    MaterialStore(self.material_repository).freeze(self.material_context,
+                        self.material_context if self.plan_pass else 'routine')
+                queue=None if continuous else self.scheduler.eligible(once=True,task_ids=selection)
+                if self.plan_pass:
+                    for reason in cursor.selected(queue,self.scheduler.instances):
+                        self.emit('notice',reason)
+                self.emit('queue','',tasks=[e['event_name'] for e in queue or []
+                          if not cursor.groups.get(e['instance_id'],{}).get('scheduled')])
+                return cursor,queue
+            self.daily_config_refresh()
+            cursor,once=prepare_pass()
             idle_home=False
             while self.flag_run:
                 # Check while waiting too, before selecting the next due task.
-                self.daily_config_refresh()
+                if self.daily_config_refresh():
+                    cursor,once=prepare_pass()
                 if once is not None:
                     event=once.pop(0) if once else None
-                    task=self.scheduler.expand(event) if event else None
+                    task=self.scheduler.expand(event,once=True) if event else None
                 else: task=self.scheduler.heartbeat()
                 if task is None:
                     if not idle_home:
                         self.to_main_page()
                         idle_home=True
-                    if once is not None: break
+                    if once is not None:
+                        cursor.finish_pass()
+                        break
                     if self.state!='waiting': self._state('waiting','等待下一个到期任务。')
                     self.guard.wait(1)
                     continue
                 idle_home=False
                 self._state('running')
-                current_next_time=0
-                for activity in [*task['pre_task'],task['current_task'],*task['post_task']]:
-                    self.guard.check()
-                    self.current_task=activity
-                    self.task_params=deepcopy(self.repository.load_config()['routine'])
-                    self.task_details={}
-                    title=TASKS[activity].title
-                    self.emit('task',title,task_id=activity,state='running')
-                    self.next_time=0
-                    if not self.solve(activity): raise RuntimeError(self.error or title+'执行失败')
-                    self.guard.check()
-                    result={'task_id':activity,'status':'SUCCESS','reason':self.task_details.get('reason',title+'处理完成。'),**self.task_details}
-                    results.append(result)
-                    task_state={'SKIPPED':'skipped','PARTIAL':'partial'}.get(result['status'],'succeeded')
-                    self.emit('task',result['reason'],task_id=activity,state=task_state,result=result['status'])
-                    if activity==task['current_task']: current_next_time=self.next_time
-                self.scheduler.systole(task['current_task'],current_next_time,force_task=True)
+                try:
+                    self.run_group(task,cursor,results)
+                except GameDayChanged:
+                    if self.plan_pass: raise
+                    cursor,once=prepare_pass()
             terminal='succeeded' if self.flag_run else 'stopped'
+        except GameDayChanged:
+            terminal='stopped'
         except RequestHumanTakeOver:
             terminal='stopped'
         except Exception as exc:
@@ -169,37 +202,84 @@ class MadThread:
                 except OSError: pass
         finally:
             self.flag_run=False
-            if self.connection: self.connection.close()
-            if self.ocr_client and self.resources is None: self.ocr_client.stop_server()
+            try:
+                if self.connection: self.connection.close()
+                if self.ocr_client and self.resources is None: self.ocr_client.stop_server()
+            finally:
+                if lease is not None: lease.unlock()
             self.last_result={'status':terminal,'tasks':results,'error':self.error,'device_actions':self.guard.actions,'run_dir':str(self.run_dir)}
+            if self.plan_pass: self.plan_pass.ended(self.last_result)
             try:
                 atomic_json(self.run_dir/'result.json',self.last_result)
-                atomic_json(self.repository.data_root/'state'/self.repository.profile_id/'last-run.json',self.last_result)
+                if not self.material_sync:
+                    atomic_json(self.repository.data_root/'state'/self.repository.profile_id/'last-run.json',self.last_result)
             except OSError as exc: self.logger.warning('运行摘要写入失败：'+str(exc))
             self.emit('result','本轮执行结束。' if terminal=='succeeded' else '已停止。' if terminal=='stopped' else '执行失败，请查看日志。',state=terminal,result=self.last_result,error=self.error)
             self._state(terminal)
             self.logger.removeHandler(logfile)
             logfile.close()
 
+    def run_group(self,task,cursor,results):
+        root=task['current_task']
+        group=cursor.group(root,self.scheduler.instances[root]['next_tick'])
+        if group['scheduled']: return
+        for role,keys in (('pre',task['pre_task']),('main',[root]),('post',task['post_task'])):
+            seen={}
+            for key in keys:
+                seen[key]=seen.get(key,0)+1
+                token=[role,key,seen[key]]
+                if token in group['steps']: continue
+                self.guard.check()
+                event=self.scheduler.instances[key]
+                kind,title=event['func_name'],event['event_name']
+                self.current_task,self.current_instance_id=kind,key
+                config=self.repository.load_config()
+                self.task_params=deepcopy(config['routine'])
+                self.task_params[kind[4:]]=deepcopy(instance_params(config,event))
+                self.task_details={}
+                identity={'task_id':kind,'instance_id':key,'event_name':title}
+                if self.plan_pass: self.plan_pass.begin_step(root,token,identity)
+                self.emit('task',title,**identity,state='running')
+                self.next_time=0
+                if not self.solve(kind): raise RuntimeError(self.error or title+'执行失败')
+                result={**identity,'status':'SUCCESS','reason':title+'处理完成。',**self.task_details}
+                results.append(result)
+                if role=='main': group['next_time']=self.next_time
+                group['steps'].append(token)
+                if kind=='mad.material_sweep': result['material_context']=self.material_context
+                if self.plan_pass: self.plan_pass.confirm(result)
+                else: cursor.save()
+                state={'SKIPPED':'skipped','PARTIAL':'partial'}.get(result['status'],'succeeded')
+                self.emit('task',result['reason'],**identity,state=state,result=result['status'])
+        if not self.plan_pass:
+            self.scheduler.systole(root,group['next_time'],force_task=True)
+        cursor.finish_group(root)
+
     def solve(self,activity):
         # BAAS Baas_thread.py:529-552 recovery, plus MAD's date-change dialog.
         for attempt in range(3):
             if attempt: self.logger.info('Retry Task %s %s',activity,attempt)
             try: return self.func_dict[activity](self)
+            except RequestHumanTakeOver:
+                raise
             except GameDayChanged:
+                if self.plan_pass: raise
                 self.to_main_page()
-                self.daily_config_refresh()
+                if self.daily_config_refresh() and self.current_instance_id is not None:
+                    raise
                 self.task_details={}
             except FunctionCallTimeout:
+                if self.plan_pass: raise
                 if not self.deal_with_func_call_timeout(): return False
             except PackageIncorrect as exc:
+                if self.plan_pass: raise
                 if not self.deal_with_package_incorrect(exc.message): return False
             except Exception:
                 if self.flag_run:
                     self.error=traceback.format_exc()
                     self.logger.error(self.error)
                     return False
-                return True
+                raise RequestHumanTakeOver()
         return False
 
     def deal_with_package_incorrect(self,curr_pkg):
@@ -224,6 +304,9 @@ class MadThread:
         return False
 
     def daily_config_refresh(self,force=False,now=None):
+        if self.plan_pass:
+            self.plan_pass.check_day()
+            return False
         config=self.repository.load_config()
         reset=config['scheduling']['reset']
         now=time.time() if now is None else now
@@ -267,11 +350,13 @@ class MadThread:
         self.guard.check()
         for i in range(count):
             self.guard.check()
+            if self.plan_pass: self.plan_pass.check_day()
             self.control.click(x,y)
             if count>1 and i<count-1: self.guard.wait(max(.08,duration/max(count,1)))
         if wait_over: self.guard.wait(self.screenshot_interval*rate)
     def swipe(self,x1,y1,x2,y2,duration=.3,post_sleep_time=1):
         self.guard.check()
+        if self.plan_pass: self.plan_pass.check_day()
         self.control.swipe(x1,y1,x2,y2,duration)
         self.guard.wait(post_sleep_time)
     def to_main_page(self,skip_first_screenshot=False):

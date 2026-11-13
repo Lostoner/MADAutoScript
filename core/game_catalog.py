@@ -1,4 +1,4 @@
-"""Selection data observed on ONEstore MAD 1.10.3; no editable stage/name fields."""
+"""ONEstore selection data; NORMAL zones 1–15 crosschecked on 1.11.6."""
 import json
 from pathlib import Path
 

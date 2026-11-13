@@ -175,6 +175,13 @@ class TaskCard(QFrame):
         row.addWidget(self.summary, 1)
         row.addWidget(self.result)
         row.addWidget(self.expand)
+        self.more = QToolButton(self.header)
+        self.more.setText('⋯')
+        self.more.setToolTip('指令操作')
+        self.more.setAccessibleName('指令操作')
+        self.more.setFixedSize(26, 30)
+        self.more.setPopupMode(QToolButton.InstantPopup)
+        row.addWidget(self.more)
         outer.addWidget(self.header)
         self.body = QFrame(self)
         self.body_layout = QVBoxLayout(self.body)
@@ -194,14 +201,15 @@ class TaskCard(QFrame):
             self.addAction(action)
             self.actions_order.append(action)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.menu = QMenu(self)
+        self.menu.addActions(self.actions_order)
+        self.more.setMenu(self.menu)
         self.customContextMenuRequested.connect(self._menu)
         theme.changed.connect(self.apply_theme)
         self.apply_theme()
 
     def _menu(self, point):
-        menu = QMenu(self)
-        menu.addActions(self.actions_order)
-        menu.exec_(self.mapToGlobal(point))
+        if not self.busy: self.menu.exec_(self.mapToGlobal(point))
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
@@ -217,6 +225,7 @@ class TaskCard(QFrame):
         self.busy = busy
         self.check.setEnabled(not busy and supported)
         self.grip.setEnabled(not busy)
+        self.more.setEnabled(not busy)
         self.body.setEnabled(not busy)
         for action in self.actions_order: action.setEnabled(not busy)
 
@@ -241,7 +250,7 @@ class TaskCard(QFrame):
         bg = s['selected'] if self.property('active') else s['card']
         self.setStyleSheet(f'QFrame#taskCard {{background:{bg}; border:1px solid {border}; border-radius:9px;}} '
                            f'QToolButton {{border:0; background:transparent; color:{s["muted"]}; border-radius:4px;}} '
-                           f'QToolButton:hover {{background:{s["selected"]};}}')
+                           f'QToolButton:hover {{background:{s["selected"]};}} QToolButton::menu-indicator {{image:none;}}')
         self.title.setStyleSheet(f'color:{c["text"]};')
         self.summary.setStyleSheet(f'color:{s["muted"]};')
         self.result.setStyleSheet(f'color:{s["accent"] if self.property("active") else s["muted"]};')

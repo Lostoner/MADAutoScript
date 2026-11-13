@@ -1,5 +1,4 @@
 """BAAS event parameters. Task toggles/order live only in the task list."""
-from copy import deepcopy
 from datetime import datetime,timezone
 from zoneinfo import ZoneInfo
 from PyQt5.QtCore import Qt,pyqtSignal
@@ -31,24 +30,16 @@ class SwitchFragment(ScrollArea):
         self.scrollWidget=QWidget(self)
         layout=QVBoxLayout(self.scrollWidget)
         self.title=TitleLabel('持续运行设置',self)
-        self.note=QLabel('开关与顺序共用“任务配置”。间隔 0 使用 86400 秒；到期时间取间隔和每日重置中较早的一项。\n每日重置与禁用时段使用设置中的时区；多个时刻/时段用 ; 分隔。前后置列表保留在事件配置中。',self)
+        self.note=QLabel('间隔 0 使用 86400 秒；到期时间取间隔和每日重置中较早的一项。\n每日重置与禁用时段使用设置中的时区；多个时刻或时段用 ; 分隔。',self)
         self.note.setWordWrap(True)
         layout.addWidget(self.title); layout.addWidget(self.note)
         self.tableView=TableWidget(self)
         self.tableView.setColumnCount(4)
         self.tableView.setHorizontalHeaderLabels(['功能','间隔（秒）','每日重置 HH:MM','禁用时段 HH:MM-HH:MM'])
-        self.tableView.setRowCount(len(tasks))
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableView.setMinimumHeight(480)
         self.tableView.setEditTriggers(self.tableView.NoEditTriggers)
         self.rows={}
-        for row,(key,spec) in enumerate(tasks.items()):
-            label=QLabel(spec.title,self.tableView)
-            interval=SpinBox(self.tableView); interval.setRange(0,2147483647)
-            resets=LineEdit(self.tableView); periods=LineEdit(self.tableView)
-            self.tableView.setRowHeight(row,42)
-            for column,widget in enumerate((label,interval,resets,periods)): self.tableView.setCellWidget(row,column,widget)
-            self.rows[key]=(interval,resets,periods)
         layout.addWidget(self.tableView)
         actions=QHBoxLayout()
         self.save_button=PrimaryPushButton('保存调度参数',self)
@@ -62,11 +53,34 @@ class SwitchFragment(ScrollArea):
         theme.changed.connect(self._apply_theme)
         self.cancel_changes(); self._apply_theme()
     def cancel_changes(self):
-        self.base_events=self.repository.load_events()
+        self.base_events=sorted(self.repository.load_events(),key=lambda e:e['priority'])
         self.zone=self.repository.load_config()['scheduling']['timezone']
-        for event in self.base_events:
-            if event['func_name'] not in self.rows: continue
-            interval,resets,periods=self.rows[event['func_name']]
+        names={e['instance_id']:e['event_name'] for e in self.base_events}
+        self.tableView.clearSpans()
+        self.tableView.setRowCount(0)
+        self.tableView.setRowCount(len(self.base_events))
+        self.rows.clear()
+        for row,event in enumerate(self.base_events):
+            key=event['instance_id']
+            label=QLabel(event['event_name'],self.tableView)
+            label.setToolTip(event['event_name'])
+            interval=SpinBox(self.tableView); interval.setRange(0,2147483647)
+            resets=LineEdit(self.tableView); periods=LineEdit(self.tableView)
+            self.tableView.setRowHeight(row,42)
+            self.tableView.setCellWidget(row,0,label)
+            self.tableView.setCellWidget(row,3,periods)
+            self.rows[key]=(interval,resets,periods)
+            if event.get('follow_after'):
+                target=names.get(event['follow_after'],event['follow_after'])
+                timing=QLabel(f'在「{target}」之后执行',self.tableView)
+                timing.setAlignment(Qt.AlignCenter)
+                self.tableView.setSpan(row,1,1,2)
+                self.tableView.setCellWidget(row,1,timing)
+                for widget in (interval,resets):
+                    widget.setParent(timing); widget.hide(); widget.setEnabled(False)
+            else:
+                self.tableView.setCellWidget(row,1,interval)
+                self.tableView.setCellWidget(row,2,resets)
             interval.setValue(int(event['interval']))
             resets.setText('; '.join(':'.join(f'{x:02d}' for x in convert_clock(v,'UTC',self.zone)) for v in event['daily_reset']))
             periods.setText(format_periods(event['disabled_time_range']))
@@ -78,11 +92,14 @@ class SwitchFragment(ScrollArea):
             patches=[]
             for key,(a,b,c) in self.rows.items():
                 old=self.original[key]
-                patch={'func_name':key}
+                patch={'instance_id':key}
                 if a.value()!=old[0]: patch['interval']=a.value()
                 if b.text()!=old[1]: patch['daily_reset']=parse_resets(b.text(),self.zone)
                 if c.text()!=old[2]: patch['disabled_time_range']=parse_periods(c.text())
                 if len(patch)>1: patches.append(patch)
+            existing={e['instance_id'] for e in self.repository.load_events()}
+            if any(p['instance_id'] not in existing for p in patches):
+                raise ValueError('已修改的指令已被移除，请取消更改并刷新列表')
             saved=self.repository.save_events(patches,fields={'interval','daily_reset','disabled_time_range'})
             self.cancel_changes(); self.feedback.setText('已保存；下次调度读取新值。'); self.saved.emit(saved)
         except Exception as exc: self.feedback.setText('保存失败：'+str(exc))
