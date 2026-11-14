@@ -13,6 +13,7 @@ from core.game_catalog import stage_options, characters, SHOP_ITEMS
 from core.mad_features import MAP_LOCATIONS
 from gui.widgets import TaskCard, CheckableListWidget
 from gui.theme import typography, apply_typography
+from gui.run_summary import RESULT_TEXT
 
 
 class SweepSelector(QWidget):
@@ -42,7 +43,7 @@ class SweepSelector(QWidget):
         self.add_button = PushButton('+ 添加关卡', self)
         self.add_button.clicked.connect(self.add_dialog)
         row.addWidget(self.add_button)
-        note = typography(QLabel('按列表顺序扫荡 · 次数 0 为 MAX', self), 12)
+        note = typography(QLabel('按列表顺序扫荡 · MAX 为当前可扫最大次数', self), 'caption')
         note.setWordWrap(True)
         note.setToolTip('MAX 使用游戏当前允许的最大扫荡次数。保存计划会按现有进度续算剩余次数。')
         row.addWidget(note, 1)
@@ -343,13 +344,13 @@ class RoutineFragment(ScrollArea):
         self.scrollWidget = QWidget(self)
         self.card_layout = QVBoxLayout(self.scrollWidget)
         self.card_layout.setContentsMargins(0, 0, 10, 6)
-        self.card_layout.setSpacing(8)
+        self.card_layout.setSpacing(0)
         self.add_button = PushButton('＋ 添加指令', self.scrollWidget)
         self.add_button.clicked.connect(self._choose_task)
         self.card_layout.addWidget(self.add_button)
         self.card_layout.addStretch()
         self.save_button = PushButton('保存更改', self)
-        self.cancel_button = PushButton('撤销', self)
+        self.cancel_button = PushButton('撤销更改', self)
         self.feedback = typography(QLabel('', self), 12)
         self.feedback.setWordWrap(True)
         self.save_button.clicked.connect(self.save_changes)
@@ -515,9 +516,11 @@ class RoutineFragment(ScrollArea):
             key, task = item['instance_id'], item['func_name']
             card = self.cards[key]
             name = item['event_name']
-            card.title.setText(card.title.fontMetrics().elidedText(name, Qt.ElideRight, 196))
+            card.title.setText(name)
             card.title.setToolTip(name + ' · ' + ROUTINES[task].title)
             card.check.setAccessibleName(name + '启用')
+            card.setAccessibleName(name)
+            card.expand.setAccessibleName(name + ('收起参数' if card.expand.isChecked() else '展开参数'))
             card.check.blockSignals(True)
             card.check.setChecked(item['enabled'])
             card.check.blockSignals(False)
@@ -564,6 +567,7 @@ class RoutineFragment(ScrollArea):
     def open_settings(self, task_id):
         self.cards[task_id].set_expanded(True)
         self.ensureWidgetVisible(self.cards[task_id])
+        self.cards[task_id].expand.setFocus(Qt.OtherFocusReason)
 
     def draft(self):
         config = deepcopy(self.base_config)
@@ -625,7 +629,7 @@ class RoutineFragment(ScrollArea):
     def remaining_text(plans):
         if not plans: return ''
         count = sum(p['count'] for p in plans if isinstance(p['count'], int))
-        return f'待续 · 剩余 {count} 次' if all(isinstance(p['count'], int) for p in plans) else f'待续 · {len(plans)} 关'
+        return f'有余项 · {count} 次' if all(isinstance(p['count'], int) for p in plans) else f'有余项 · {len(plans)} 关'
 
     def on_event(self, event):
         kind = event.get('kind')
@@ -634,11 +638,11 @@ class RoutineFragment(ScrollArea):
             state = event.get('state')
             self._active = task if state == 'running' else None
             self.base_config['unfinished_tasks'] = self.repository.load_config()['unfinished_tasks']
-            text = {'running': '执行中', 'succeeded': '完成', 'skipped': '已跳过', 'partial': '待续', 'needs_attention': '需处理', 'failed': '失败', 'stopped': '已停止'}.get(state, '')
+            text = {'running': '执行中', 'succeeded': '已完成', 'skipped': '已跳过', 'partial': '有余项', 'needs_attention': '需处理', 'failed': '未完成', 'stopped': '已停止'}.get(state, '')
+            text = RESULT_TEXT.get(event.get('result'), text)
             if state in ('succeeded', 'partial'): text = self.remaining_text(self.base_config['unfinished_tasks'].get(task, [])) or text
             self._results[task] = (text, event.get('message', ''))
         elif kind == 'result':
-            names = {'SUCCESS': '完成', 'NOTHING_TO_CLAIM': '无可领', 'SKIPPED': '已跳过', 'PARTIAL': '待续', 'FAILED': '未完成', 'NEEDS_ATTENTION': '需处理', 'STOPPED': '已停止'}
             self.base_config['unfinished_tasks'] = self.repository.load_config()['unfinished_tasks']
             if self._active:
                 self._results[self._active] = ('已停止' if event.get('state') == 'stopped' else '未完成', event.get('result', {}).get('error') or '')
@@ -646,7 +650,7 @@ class RoutineFragment(ScrollArea):
             for item in event.get('result', {}).get('tasks', []):
                 task = item.get('instance_id', item['task_id'])
                 plans = item.get('remaining', self.base_config['unfinished_tasks'].get(task, []))
-                text = names.get(item['status'], item['status'])
+                text = RESULT_TEXT.get(item['status'], item['status'])
                 if item['status'] in ('SUCCESS', 'PARTIAL'): text = self.remaining_text(plans) or text
                 self._results[task] = (text, item.get('reason', ''))
                 if item['task_id']=='mad.material_sweep' and item['status']=='PARTIAL' and item.get('material_context') and self.repository:
@@ -654,7 +658,7 @@ class RoutineFragment(ScrollArea):
                     store=MaterialStore(self.repository)
                     round_=store.state()['rounds'].get(item['material_context'])
                     if round_ and not store.remaining(round_['snapshot']):
-                        self._results[task]=('完成','共享素材目标已达成。')
+                        self._results[task]=('已完成','共享素材目标已达成。')
         elif kind == 'state' and event.get('state') == 'starting':
             self._results.clear()
             self._active = None

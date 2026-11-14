@@ -139,7 +139,7 @@ class DragGrip(QToolButton):
 
 
 class TaskCard(QFrame):
-    """One card for every task; only its parameter widget varies."""
+    """One expandable task row, retaining its instance identity and actions."""
     moveRequested = pyqtSignal(str, int)
     dropRequested = pyqtSignal(str, str, bool)
 
@@ -154,38 +154,49 @@ class TaskCard(QFrame):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         self.header = QFrame(self)
-        self.header.setFixedHeight(56)
+        self.header.setMinimumHeight(76)
         row = QHBoxLayout(self.header)
-        row.setContentsMargins(8, 0, 12, 0)
-        row.setSpacing(10)
+        row.setContentsMargins(12, 12, 12, 12)
+        row.setSpacing(12)
         self.grip = DragGrip(task_id, self.header)
         self.check = CheckBox(self.header)
         self.check.setFixedWidth(26)
         self.check.setObjectName(task_id + '.enabled')
         self.check.setAccessibleName(title + '启用')
-        self.title = typography(QLabel(title, self.header), 14, True)
-        self.summary = typography(ElidedLabel(self.header), 13)
-        self.result = typography(QLabel('', self.header), 12)
+        self.title = typography(QLabel(title, self.header), 'body', True)
+        self.title.setWordWrap(True)
+        self.title.setMinimumWidth(0)
+        self.title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.title.setTextFormat(Qt.PlainText)
+        self.summary = typography(ElidedLabel(self.header), 'caption')
+        self.summary.setTextFormat(Qt.PlainText)
+        self.result = typography(QLabel('', self.header), 'caption')
+        self.result.setTextFormat(Qt.PlainText)
         self.expand = QToolButton(self.header)
         self.expand.setText('⌄')
         self.expand.setCheckable(True)
-        self.expand.setFixedSize(26, 30)
+        self.expand.setFixedSize(32, 32)
         self.expand.setToolTip('展开参数')
-        for widget in (self.grip, self.check, self.title): row.addWidget(widget)
-        row.addWidget(self.summary, 1)
+        self.expand.setAccessibleName(title + '展开参数')
+        for widget in (self.grip, self.check): row.addWidget(widget, 0, Qt.AlignTop)
+        text = QVBoxLayout()
+        text.setSpacing(4)
+        text.addWidget(self.title)
+        text.addWidget(self.summary)
+        row.addLayout(text, 1)
         row.addWidget(self.result)
         row.addWidget(self.expand)
         self.more = QToolButton(self.header)
         self.more.setText('⋯')
         self.more.setToolTip('指令操作')
         self.more.setAccessibleName('指令操作')
-        self.more.setFixedSize(26, 30)
+        self.more.setFixedSize(32, 32)
         self.more.setPopupMode(QToolButton.InstantPopup)
         row.addWidget(self.more)
         outer.addWidget(self.header)
         self.body = QFrame(self)
         self.body_layout = QVBoxLayout(self.body)
-        self.body_layout.setContentsMargins(44, 0, 14, 14)
+        self.body_layout.setContentsMargins(44, 0, 16, 16)
         self.body.setVisible(False)
         outer.addWidget(self.body)
         self.expand.toggled.connect(self.set_expanded)
@@ -219,7 +230,15 @@ class TaskCard(QFrame):
     def set_expanded(self, expanded):
         self.expand.setChecked(expanded)
         self.expand.setText('⌃' if expanded else '⌄')
+        self.expand.setAccessibleName(self.title.text() + ('收起参数' if expanded else '展开参数'))
         self.body.setVisible(expanded)
+
+    def keyPressEvent(self, event):
+        if self.hasFocus() and event.key() in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+            self.expand.toggle()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
     def set_busy(self, busy, supported=True):
         self.busy = busy
@@ -246,11 +265,16 @@ class TaskCard(QFrame):
 
     def apply_theme(self):
         s, c = self.theme.surfaces, self.theme.colors
-        border = s['accent'] if self.property('active') else s['line']
+        border = s['accent'] if self.property('active') else 'transparent'
         bg = s['selected'] if self.property('active') else s['card']
-        self.setStyleSheet(f'QFrame#taskCard {{background:{bg}; border:1px solid {border}; border-radius:9px;}} '
+        self.setStyleSheet(f'QFrame#taskCard {{background:{bg}; border:0; border-left:3px solid {border};border-bottom:1px solid {s["line"]};}} '
+                           f'QFrame#taskCard:focus {{border-left-color:{s["focus"]};}} '
                            f'QToolButton {{border:0; background:transparent; color:{s["muted"]}; border-radius:4px;}} '
-                           f'QToolButton:hover {{background:{s["selected"]};}} QToolButton::menu-indicator {{image:none;}}')
+                           f'QToolButton:hover {{background:{s["selected"]};}} QToolButton:focus {{border:1px solid {s["focus"]};}} '
+                           f'QToolButton::menu-indicator {{image:none;}}')
         self.title.setStyleSheet(f'color:{c["text"]};')
         self.summary.setStyleSheet(f'color:{s["muted"]};')
-        self.result.setStyleSheet(f'color:{s["accent"] if self.property("active") else s["muted"]};')
+        color = s['accent'] if self.property('active') else (
+            c['text__error'] if self.result.text() in ('未完成', '失败', '需处理') else
+            c['text__warning'] if self.result.text().startswith(('有余项', '待续')) else s['muted'])
+        self.result.setStyleSheet(f'color:{color};')

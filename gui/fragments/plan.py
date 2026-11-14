@@ -7,14 +7,14 @@ from PyQt5.QtCore import Qt, QDate, QTime, QUrl, pyqtSignal
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFormLayout,
     QDateEdit, QTimeEdit, QLineEdit, QDialog, QDialogButtonBox, QListWidget, QListWidgetItem,
-    QStackedWidget, QSplitter, QMenu, QInputDialog, QMessageBox, QTextEdit, QCheckBox, QTabWidget)
-from qfluentwidgets import PushButton, PrimaryPushButton
+    QStackedWidget, QSplitter, QMenu, QInputDialog, QMessageBox, QTextEdit, QTabWidget)
+from qfluentwidgets import PushButton, PrimaryPushButton, CheckBox
 from core.config.default_config import default_events
 from core.routine_catalog import default_routine, parameter_summary
 from core.game_catalog import stage_options
 from core.config.schedule_fields import format_periods
 from gui.fragments.routine import RoutineFragment
-from gui.theme import typography
+from gui.theme import typography, apply_typography
 
 
 STATUS = {'ready':'待执行','running':'执行中','waiting_device':'待设备','stopped':'已停止',
@@ -88,7 +88,7 @@ class PlanFragment(QWidget):
         self.fields=QWidget(); f=QHBoxLayout(self.fields); f.setContentsMargins(0,0,0,0)
         self.name=QLineEdit(); self.name.setPlaceholderText('一日任务名称'); self.name.setAccessibleName('一日任务名称')
         self.name.textEdited.connect(self._edit_meta)
-        self.override=QCheckBox('单独设时'); self.override.toggled.connect(self._edit_meta)
+        self.override=CheckBox('单独设时'); self.override.toggled.connect(self._edit_meta)
         self.clock=time_control('04:00'); self.clock.timeChanged.connect(self._edit_meta)
         f.addWidget(self.name,1); f.addWidget(self.override); f.addWidget(self.clock)
         r.addWidget(self.fields)
@@ -120,15 +120,17 @@ class PlanFragment(QWidget):
     def _theme(self):
         s=self.theme.surfaces; text=self.theme.colors['text']
         self.theme.apply_surface(self)
-        self.setStyleSheet(f'QDialog {{background:{s["window"]};color:{text};}} QDialog QLabel {{color:{text};}} '
-            f'QDialog QTextEdit,QDialog QListWidget,QDialog QLineEdit,QDialog QDateTimeEdit {{background:{s["input"]};color:{text};border:1px solid {s["line"]};padding:4px;}} '
-            f'QDialog QPushButton,QTabBar::tab {{background:{s["card"]};color:{text};border:1px solid {s["line"]};padding:5px 10px;}} '
+        self.setStyleSheet(self.theme.native_style() +
+            f'QDialog {{background:{s["window"]};color:{text};}} '
+            f'QTabBar::tab {{background:{s["card"]};color:{text};border:1px solid {s["line"]};padding:5px 10px;}} '
             f'QTabBar::tab:selected {{background:{s["selected"]};}} QTabWidget::pane {{border:0;}}')
+        for widget in (self.name, self.override, self.clock): self.theme.apply_surface(widget, 'input')
         self.days.setStyleSheet(f'QListWidget {{background:{s["card"]};color:{text};border:1px solid {s["line"]};border-radius:7px;}} '
             f'QListWidget::item {{padding:7px;}} QListWidget::item:selected {{background:{s["selected"]};color:{text};border-left:3px solid {s["accent"]};}}')
         for w in (self.day_note,self.range_label,self.empty_note,self.feedback):
             w.setStyleSheet('color:'+s['muted']+';')
         self.horizon.setStyleSheet('color:'+self.theme.colors['text__warning']+';')
+        apply_typography(self)
 
     def _clamp(self,key):
         return min(max(key,self.draft['start']),self.draft['end'])
@@ -241,6 +243,7 @@ class PlanFragment(QWidget):
         status=self._runtime[1] if self._runtime[0]==today else self.store.record(today).get('status')
         today_tasks=self.draft['days'].get(today,{}).get('kind')=='tasks'
         self.start.setEnabled(not dirty and today_tasks and status not in ('running','completed','partial','expired','missed'))
+        self.start.setText('核对并继续今日' if status == 'needs_review' else '开始／继续今日')
         self.remain.setVisible(status=='partial'); self.remain.setEnabled(not dirty)
         self.stop.setVisible(status in ('running','waiting_device') or
                              (today_tasks and self.base['auto'] and status in (None,'ready')))

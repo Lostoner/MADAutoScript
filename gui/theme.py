@@ -10,16 +10,21 @@ from PyQt5.QtWidgets import QWidget
 from qfluentwidgets import Theme, isDarkTheme, setTheme, setThemeColor
 
 
+FONT_SIZES = {'title': 28, 'section': 20, 'body': 16, 'caption': 14}
+
+
 def ui_font(size=14, weight=QFont.Normal):
     font = QFont()
     font.setFamilies(['Segoe UI', 'Microsoft YaHei UI'])
-    font.setPixelSize(size)
+    # Callers' legacy sizes are 96-DPI logical sizes, not physical pixels.
+    size = FONT_SIZES.get(size, size)
+    font.setPointSizeF(max(14, size) * 72 / 96)
     font.setWeight(weight)
     font.setStyleStrategy(QFont.PreferAntialias)
     return font
 
 
-def typography(widget, size=14, bold=False):
+def typography(widget, size='body', bold=False):
     widget.setProperty('fontSize', size)
     widget.setProperty('fontBold', bold)
     widget.setFont(ui_font(size, QFont.DemiBold if bold else QFont.Normal))
@@ -29,7 +34,7 @@ def typography(widget, size=14, bold=False):
 def apply_typography(root):
     # Fluent controls set their own fonts during construction/theme changes.
     for widget in [root, *root.findChildren(QWidget)]:
-        widget.setFont(ui_font(widget.property('fontSize') or 14,
+        widget.setFont(ui_font(widget.property('fontSize') or 'caption',
                               QFont.DemiBold if widget.property('fontBold') else QFont.Normal))
 
 
@@ -60,13 +65,19 @@ COLOR_THEME = {
 # also needs opaque surfaces, otherwise native/offscreen palettes can supply
 # a white background beneath dark-theme text and translucent Fluent controls.
 SURFACE_THEME = {
-    'Light': {'window': '#f9faf9', 'page': '#f9faf9', 'input': '#ffffff', 'card': '#ffffff',
-              'line': '#e5eae6', 'accent': '#008846', 'muted': '#7b857f', 'selected': '#edf7f0'},
-    'Dark': {'window': '#1c211e', 'page': '#1c211e', 'input': '#242b26', 'card': '#242b26',
-             'line': '#354038', 'accent': '#64c58a', 'muted': '#a1aea5', 'selected': '#2c4132'},
+    'Light': {'window': '#F6F7F3', 'page': '#F6F7F3', 'input': '#FFFFFF', 'card': '#FFFFFF',
+              'line': '#DCE1D7', 'control': '#788172', 'accent': '#476D57', 'muted': '#5F695F',
+              'selected': '#E6EDE1', 'subtle': '#EEF1EB', 'focus': '#246743',
+              'action': '#263B2E', 'action_text': '#FFFFFF', 'action_hover': '#354D3E', 'action_pressed': '#192A20'},
+    'Dark': {'window': '#121719', 'page': '#121719', 'input': '#1C2325', 'card': '#1C2325',
+             'line': '#323C3D', 'control': '#84948B', 'accent': '#B6D1BD', 'muted': '#ACB7AF',
+             'selected': '#283B32', 'subtle': '#252E30', 'focus': '#C0DC9C',
+             'action': '#E5ECDF', 'action_text': '#1A2720', 'action_hover': '#FFFFFF', 'action_pressed': '#CBD8C4'},
 }
-COLOR_THEME['Light'].update(text='#252d28', text__gray='#7b857f')
-COLOR_THEME['Dark'].update(text='#e9efeb', text__gray='#a1aea5')
+COLOR_THEME['Light'].update(text='#242B25', text__gray='#5F695F', text__success='#286443',
+                            text__warning='#89581D', text__error='#AC3D32')
+COLOR_THEME['Dark'].update(text='#EDF0E9', text__gray='#ACB7AF', text__success='#9BCEAE',
+                           text__warning='#E4C28D', text__error='#EFA99E')
 
 
 class ThemeManager(QObject):
@@ -92,6 +103,13 @@ class ThemeManager(QObject):
         palette.setColor(QPalette.Base, QColor(self.surfaces['input']))
         palette.setColor(QPalette.WindowText, QColor(self.colors['text']))
         palette.setColor(QPalette.Text, QColor(self.colors['text']))
+        palette.setColor(QPalette.Button, QColor(self.surfaces['card']))
+        palette.setColor(QPalette.ButtonText, QColor(self.colors['text']))
+        palette.setColor(QPalette.Highlight, QColor(self.surfaces['selected']))
+        palette.setColor(QPalette.HighlightedText, QColor(self.colors['text']))
+        palette.setColor(QPalette.PlaceholderText, QColor(self.surfaces['muted']))
+        for role in (QPalette.Text, QPalette.WindowText, QPalette.ButtonText):
+            palette.setColor(QPalette.Disabled, role, QColor(self.surfaces['muted']))
         widget.setPalette(palette)
         widget.setAutoFillBackground(True)
 
@@ -103,6 +121,17 @@ class ThemeManager(QObject):
         content.setStyleSheet(f'QWidget#{content.objectName()} {{background-color: {color};}}')
         for widget in (area, area.viewport(), content):
             self.apply_surface(widget)
+
+    def native_style(self):
+        """Style plain Qt form fields without replacing Fluent subclasses' QSS."""
+        s, c = self.surfaces, self.colors
+        fields = '.QLineEdit, .QDateEdit, .QTimeEdit, .QDateTimeEdit, .QTextEdit'
+        return (f'{fields} {{background:{s["input"]};color:{c["text"]};'
+                f'border:1px solid {s["control"]};border-radius:6px;padding:6px;'
+                f'selection-background-color:{s["selected"]};selection-color:{c["text"]};}} '
+                f'.QLabel, .QCheckBox {{color:{c["text"]};background:transparent;}} '
+                f'.QLineEdit:focus, .QTimeEdit:focus, .QDateEdit:focus {{border-color:{s["focus"]};}} '
+                f'.QLineEdit:disabled, .QTimeEdit:disabled, .QCheckBox:disabled {{color:{s["muted"]};}}')
 
     def apply(self, name):
         themes = {'system': Theme.AUTO, 'light': Theme.LIGHT, 'dark': Theme.DARK}

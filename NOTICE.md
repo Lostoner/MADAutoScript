@@ -1,6 +1,6 @@
 # 来源、修改与致谢
 
-适用版本：MADAutoScript 0.7.5；更新日期：2026-10-28。应用源码采用 [GPL-3.0-only](LICENSE)。本文件记录实际来源及感谢对象，不替代各组件的完整许可条款。
+适用版本：MADAutoScript 0.8.0；更新日期：2026-11-13。应用源码采用 [GPL-3.0-only](LICENSE)。本文件记录实际来源及感谢对象，不替代各组件的完整许可条款。
 
 ## 应用代码与执行能力
 
@@ -23,7 +23,7 @@ MADAutoScript 贡献者自 2026-10-22 起加入 MAD ONEstore 的页面识别、�
 
 **MaaBd2（Maa-Assistant-Browndust2）** — 感谢 [alkaidjin/Maa-Assistant-Browndust2](https://github.com/alkaidjin/Maa-Assistant-Browndust2) 及贡献者。参考包为 v26.10.8，参考内容为任务卡片、参数展开、状态布局与字体观感。当前 MAD 界面使用原有 PyQt5/Fluent Widgets 技术栈实现，未引入 MaaBd2 或其 MXU 前端的源码、可执行文件、字体或图片。本项为设计参考致谢，不是运行依赖，也不据此将其 AGPLv3 声明为本应用许可证。
 
-**MaaFramework** — 感谢 [MaaXYZ/MaaFramework](https://github.com/MaaXYZ/MaaFramework) 的公开文档，曾用于评估后续执行框架方案。0.7.5 未调用或分发 MaaFramework，不应标注为“Powered by MaaFramework”。迁移现已暂缓；本发布继续维护现有 BAAS 派生执行链。
+**MaaFramework** — 感谢 [MaaXYZ/MaaFramework](https://github.com/MaaXYZ/MaaFramework) 的公开文档，曾用于评估后续执行框架方案。本版本未调用或分发 MaaFramework，不应标注为“Powered by MaaFramework”。迁移现已暂缓；本发布继续维护现有 BAAS 派生执行链。
 
 如以后实际引入这些项目的实现，需在引入时记录具体文件、版本与适用许可，更新依赖和分发资料；当前致谢不构成未来使用的额外授权。
 
@@ -33,7 +33,7 @@ MADAutoScript 贡献者自 2026-10-22 起加入 MAD ONEstore 的页面识别、�
 
 游戏名称、角色名、界面及 34 张功能识别裁剪归游戏原权利人所有；本项目的 GPL 不授予这些素材的版权。识别图来源在 `src/images/MAD_onestore_zh-CN/provenance.json` 中记录。Segoe UI / Microsoft YaHei UI 使用 Windows 系统字体，不随包分发字体文件。MuMu、游戏客户端和其账号服务均由用户另行安装、使用，不包含在发布包中。
 
-开发版补充（2026-11-13）：素材分类选择器内置 61 张原始 WebP 图标，复用已采集的 [anyabot/MAD-Viewer](https://github.com/anyabot/MAD-Viewer/tree/c312e4e305cc57441e5bd615224642ea9b2168ce) 固定版本。逐项来源见 `src/images/materials/provenance.json`。图标版权仍归游戏原权利人；上游代码许可和本项目 GPL 均不授予这些游戏美术的版权。
+0.8.0 补充（2026-11-13）：素材分类选择器内置 61 张原始 WebP 图标，复用已采集的 [anyabot/MAD-Viewer](https://github.com/anyabot/MAD-Viewer/tree/c312e4e305cc57441e5bd615224642ea9b2168ce) 固定版本。逐项来源见 `src/images/materials/provenance.json`。图标版权仍归游戏原权利人；上游代码许可和本项目 GPL 均不授予这些游戏美术的版权。
 
 本项目由 MADAutoScript 维护者单独维护，不是 BAAS、MaaBd2、MaaFramework、MuMu 或游戏官方项目；致谢不表示任何上游参与维护、审核或背书。
 

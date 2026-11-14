@@ -40,6 +40,7 @@ class Window(QMainWindow):
         self._closing = False
         self._last_run_dir = None
         self._preview_frame = None
+        self._material_review_key = None
         self.routineInterface = RoutineFragment(repository, self.theme, self)
         self.homeInterface = HomeFragment(self.theme, self.routineInterface, self)
         self.setCentralWidget(self.homeInterface)
@@ -59,6 +60,9 @@ class Window(QMainWindow):
         home.schedulerRequested.connect(self._show_scheduler)
         home.planRequested.connect(self._show_plan)
         home.previewRequested.connect(self._refresh_preview)
+        home.locateRequested.connect(self.routineInterface.open_settings)
+        home.recoveryRequested.connect(self._recover_from_home)
+        self.routineInterface.dirtyChanged.connect(lambda _: self._refresh_recovery())
         self.routineInterface.saved.connect(lambda c: self._update_profile(c, self.app_snapshot))
         self.routineInterface.materialRequested.connect(lambda key,action:self._show_materials('routine',key,action))
         self.settingInterface.saved.connect(self._update_profile)
@@ -73,7 +77,7 @@ class Window(QMainWindow):
         self._preview_timer.timeout.connect(self._refresh_preview)
         self._preview_timer.start()
         self._update_profile(self.snapshot, self.app_snapshot)
-        home.on_log_received('INFO', '就绪。开始 / 继续将保留本轮剩余关卡。')
+        home.on_log_received('INFO', '就绪。开始／继续日常保留原断点和剩余关卡。')
         self._plan_timer = QTimer(self)
         self._plan_timer.setInterval(5000)
         self._plan_timer.timeout.connect(self._tick_plan)
@@ -83,6 +87,7 @@ class Window(QMainWindow):
         super().showEvent(event)
         # Only the window admitted by the profile UI lock may recover plan state.
         self._sync_plan_view()
+        self._refresh_recovery()
 
     @property
     def worker(self): return self.runtime.worker
@@ -141,16 +146,20 @@ class Window(QMainWindow):
         available=self.screen().availableGeometry()
         dialog.resize(min(1060,available.width()),min(730,available.height()))
         if action=='sync': QTimer.singleShot(0,dialog.request_sync)
+        elif action=='review': QTimer.singleShot(0,dialog.resolve_pending)
         dialog.exec_()
         self.material_dialog=None
         dialog.deleteLater()
+        self._refresh_recovery()
 
     def _sync_materials(self):
         if self.worker and self.worker.is_running: return
+        self.homeInterface.begin_run('同步素材数据')
         self._set_state('starting')
         try: self.runtime.sync_materials()
         except Exception as error:
             self._set_state('failed'); self.homeInterface.on_log_received('ERROR',str(error))
+            self.homeInterface.show_error(error)
             if self.material_dialog: self.material_dialog.feedback.setText(str(error))
 
     def _plan_action(self, action):
@@ -227,6 +236,7 @@ class Window(QMainWindow):
             self.homeInterface.set_plan_summary(summary, self._plan_auto, action)
             if self.plan_page: self.plan_page.set_runtime_status(day,status,reason)
             self._last_plan_status = (day,status,reason)
+            self._refresh_recovery()
         except (ValueError, OSError, RuntimeError) as exc:
             self._plan_auto = False
             self.homeInterface.set_plan_summary('计划读取失败：' + str(exc), False)
@@ -252,7 +262,7 @@ class Window(QMainWindow):
             if dialog: self.theme.apply_surface(dialog)
         s = self.theme.surfaces
         self.setStyleSheet(f'QMainWindow#madWorkspace {{background:{s["window"]};}} QComboBox {{color:{self.theme.colors["text"]};background:{s["input"]};'
-                           f'border:1px solid {s["line"]};border-radius:5px;padding:5px 8px;}} '
+                           f'border:1px solid {s["control"]};border-radius:5px;padding:5px 8px;}} '
                            f'QComboBox QAbstractItemView {{background:{s["input"]};color:{self.theme.colors["text"]};'
                            f'selection-background-color:{s["selected"]};}} '
                            f'QDialog {{background:{s["window"]};color:{self.theme.colors["text"]};}} '
@@ -262,7 +272,7 @@ class Window(QMainWindow):
                            f'QListWidget::item:selected, QMenu::item:selected {{background:{s["selected"]};}} '
                            f'QListWidget::item:disabled {{color:{s["muted"]};}} '
                            f'QDialogButtonBox QPushButton {{color:{self.theme.colors["text"]};background:{s["card"]};'
-                           f'border:1px solid {s["line"]};border-radius:5px;padding:6px 16px;}}')
+                           f'border:1px solid {s["control"]};border-radius:5px;padding:6px 16px;}}' + self.theme.native_style())
         apply_typography(self)
 
     @pyqtSlot(dict, dict)
@@ -286,23 +296,69 @@ class Window(QMainWindow):
             if continuous or new_round:
                 self._plan_notice('请先暂停计划的自动执行，再运行普通日常。', True)
                 return
-            if self.homeInterface.plan_action_text == '查看日程':
-                self._show_plan()
-                return
-            self._start_plan()
+            self._show_plan()
+            return
+        self._refresh_recovery()
+        if self._material_review_key:
+            self._recover_from_home()
             return
         for page, dialog in ((self.settingInterface, self.settings_dialog), (self.schedulerInterface, self.scheduler_dialog)):
             if page.has_unsaved_changes():
                 self.homeInterface.on_log_received('WARNING', '设置或调度中有未保存的更改，请先保存或撤销。')
                 dialog.exec_()
                 return
+        if new_round and QMessageBox.question(self, '开始新一轮',
+                ('将先保存当前任务更改。\n' if self.routineInterface.has_unsaved_changes() else '') +
+                '将开始完整的新一轮，已完成的指令也可能再次执行；扫荡次数按当前计划重建。继续？',
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+            return
         if self.routineInterface.has_unsaved_changes() and not self.routineInterface.save_changes(): return
+        self.homeInterface.begin_run('持续运行' if continuous else '普通日常')
         self._set_state('starting')
         try:
             self.runtime.start(continuous, new_round=new_round)
         except Exception as error:
             self._set_state('failed')
             self.homeInterface.on_log_received('ERROR', str(error))
+            self.homeInterface.show_error(error)
+
+    def _refresh_recovery(self):
+        """Expose existing review paths only for the affected execution context."""
+        from core.material_store import MaterialStore, TASK
+        self._material_review_key = None
+        try:
+            pending = MaterialStore(self.repository).state()['pending']
+            if pending and pending['phase'] == 'confirming':
+                enabled = [e['instance_id'] for e in self.routineInterface._queue
+                           if e['func_name'] == TASK and e['enabled']]
+                if enabled:
+                    self._material_review_key = pending['instance'] if pending['instance'] in enabled else enabled[0]
+        except (ValueError, OSError, KeyError) as error:
+            self.homeInterface.on_log_received('ERROR', '素材状态读取失败：' + str(error))
+        plan_review = self._last_plan_status and self._last_plan_status[1] == 'needs_review'
+        self.homeInterface.set_recovery('plan' if plan_review and (
+            self._plan_auto or self.homeInterface._plan_date == self._last_plan_status[0]) else
+            'material' if self._material_review_key else '')
+
+    def _recover_from_home(self):
+        if self.worker and self.worker.is_running: return
+        if self.homeInterface._recovery == 'plan':
+            self._show_plan()  # Existing calendar review owns its frozen checkpoint.
+        elif self._material_review_key in self.routineInterface.editors:
+            self._show_materials('routine', self._material_review_key, 'review')
+
+    def _display_tasks(self, event):
+        tasks = [dict(item) for item in event.get('result', {}).get('tasks', [])]
+        # A later material instruction can satisfy an earlier instruction's goals.
+        # Reflect the existing final inventory meaning without altering receipts.
+        from core.material_store import MaterialStore
+        store = MaterialStore(self.repository)
+        for item in tasks:
+            if item.get('task_id') == 'mad.material_sweep' and item.get('status') == 'PARTIAL' and item.get('material_context'):
+                round_ = store.state()['rounds'].get(item['material_context'])
+                if round_ and not store.remaining(round_['snapshot']):
+                    item.update(status='SUCCESS', reason='共享素材目标已达成。')
+        return tasks
 
     def _request_stop(self):
         if self.worker:
@@ -322,12 +378,11 @@ class Window(QMainWindow):
     def _on_runtime_event(self, event):
         is_plan = bool(event.get('plan_date'))
         if not is_plan and not event.get('material_sync'): self.routineInterface.on_event(event)
+        self.homeInterface.on_runtime_event(event, self._display_tasks(event) if event['kind'] == 'result' else None)
         self.homeInterface.on_device_event(event)
         if event.get('message'):
             self.homeInterface.on_log_received(event.get('level', 'INFO'), event['message'], event['kind'] != 'log')
         if event['kind'] == 'state': self._set_state(event['state'])
-        elif event['kind'] == 'task' and event['state'] == 'running':
-            self.homeInterface.set_current_task(event['message'])
         elif event['kind'] == 'result':
             self._last_run_dir = event['result'].get('run_dir')
             self._set_state(event['state'])
@@ -341,6 +396,7 @@ class Window(QMainWindow):
             remaining = sum(len(unfinished.get(task, [])) for task in handled)
             if remaining:
                 self.homeInterface.on_log_received('INFO', f'本次执行的任务还有 {remaining} 个关卡保留待续。')
+            self._refresh_recovery()
         if is_plan and event['kind'] in ('task','result'):
             self._plan_updated()
         if self._closing: self._finish_close()

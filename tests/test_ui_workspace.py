@@ -104,7 +104,7 @@ class WorkspaceAcceptance(TestCase):
             start.assert_not_called()
         self.assertTrue(p.has_unsaved_changes())
         self.assertIn('fixture error', p.feedback.text())
-        self.assertEqual(w.homeInterface.routine_button.text(), '保存并开始')
+        self.assertEqual(w.homeInterface.routine_button.text(), '保存并开始日常')
 
         # Saving queue changes preserves worker-owned progress and next_tick.
         with patch.object(w.runtime, 'start') as start:
@@ -141,7 +141,7 @@ class WorkspaceAcceptance(TestCase):
         result = {'tasks': [{'task_id': 'mad.normal_sweep', 'status': 'PARTIAL',
                             'remaining': [{'stage_id': 'normal:4-1', 'count': 7}]}]}
         w._on_runtime_event({'kind': 'result', 'state': 'succeeded', 'result': result})
-        self.assertEqual(p.cards['mad.normal_sweep'].result.text(), '待续 · 剩余 7 次')
+        self.assertEqual(p.cards['mad.normal_sweep'].result.text(), '有余项 · 7 次')
         self.assertFalse(p.cards['mad.normal_sweep'].property('active'))
         for state, text in [('failed', '未完成'), ('stopped', '已停止')]:
             w._on_runtime_event({'kind': 'task', 'task_id': 'mad.mail', 'state': 'running', 'message': '邮箱领取'})
@@ -195,14 +195,14 @@ class WorkspaceAcceptance(TestCase):
             result=run()
         self.assertEqual(result['status'],'PARTIAL')
         self.assertEqual(result['completed'],0)
-        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'待续 · 剩余 2 次')
+        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'有余项 · 2 次')
         self.assertIn(result['reason'],self.window.homeInterface.logger_box.toPlainText())
         with patch('module.normal_sweep.navigate'), patch.object(sweep_utils,'enter'), patch.object(sweep_utils,'select_stage',return_value=True), \
              patch.object(sweep_utils,'start_sweep',return_value=sweep_utils.SweepBatch(2)), patch.object(sweep_utils,'return_to_list'):
             result=run()
         self.assertEqual(result['status'],'SUCCESS')
         self.assertEqual(result['completed'],2)
-        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'完成')
+        self.assertEqual(self.page.cards['mad.normal_sweep'].result.text(),'已完成')
 
         routine['normal_sweep']['plans']=[]
         self.repo.patch_config({'routine':routine})

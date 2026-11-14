@@ -4,7 +4,7 @@ Upstream authors: pur1fying and the Blue Archive Auto Script contributors.
 Repository: https://github.com/pur1fying/blue_archive_auto_script
 Baseline: 1110e88df5955df277737ea9717869b9ca88362b
 License: GPL-3.0-only. LICENSE retains the upstream license text unchanged.
-MAD adaptation began 2026-10-22; current local release is 0.7.5 (2026-10-28).
+MAD adaptation began 2026-10-22; current local release candidate is 0.8.0 (2026-11-13).
 Modified by the MADAutoScript contributors; upstream authorship is retained.
 Application license: GPL-3.0-only. This notice does not relicense third-party components.
 
@@ -39,3 +39,8 @@ are unchanged from 0.7.3. See NOTICE.md, THIRD_PARTY.txt and CHANGELOG.md.
 The 0.7.5 changes fix ordinary stage selection, daily plan refresh, result status
 and brief logs. Schema 5 fills an unset legacy reset time without discarding task
 settings or saved progress. Dependencies and recognition assets are unchanged.
+
+The 0.8.0 changes add repeated task instances, calendar plans, shared material
+goals and categorized selection with 61 material thumbnails, plus ordinary
+stage-selection and sweep-limit fixes. Schema 6 preserves existing settings and
+progress. Dependencies and the pinned OCR runtime are unchanged.

@@ -1,4 +1,4 @@
-MADAutoScript 0.7.5 third-party components — 2026-10-28
+MADAutoScript 0.8.0 third-party components — 2026-11-13
 
 Application code: GPL-3.0-only. See LICENSE and UPSTREAM.txt.
 The Python source application remains editable in the portable release.
@@ -28,7 +28,7 @@ Python distributions:
   Where the wheel omits a standalone license, licenses/ supplements the original
   PyQt5, apkutils2, cigam and retry texts; exact sources/hashes: licenses/SOURCES.json.
   Qt and PyQt5 corresponding source archives accompany the release in
-  MADAutoScript-0.7.3-third-party-sources.zip (URLs and SHA256 in SOURCES.json).
+  MADAutoScript-0.8.0-third-party-sources.zip (URLs and SHA256 in SOURCES.json).
 
 BAAS native OCR 1.3.1 (GPL-3.0):
   Prebuild: https://gitee.com/pur1fy/baas_-cpp_prebuild.git
