@@ -13,7 +13,7 @@ TASKS = {t.task_id:t for t in (
     TaskSpec('mad.stamina_claim','体力领取','收取累积体力',default_enabled=True),
     TaskSpec('mad.flara_sweep','弗拉瑞区域','能量'),
     TaskSpec('mad.normal_sweep','普通扫荡','普通体力'),
-    TaskSpec('mad.material_sweep','素材目标扫荡','共享目标 · 普通关卡'),
+    TaskSpec('mad.material_sweep','素材扫荡','勾选排序 · 普通关卡'),
     TaskSpec('mad.procurement_sweep','特别采购','能量'),
     TaskSpec('mad.gold_shop','普通商店','所选普通商品 · 金币'),
     TaskSpec('mad.dating','指定角色约会','每日免费次数'),
@@ -37,7 +37,7 @@ def function_table():
 def parameter_summary(task_id,routine):
     spec=TASKS[task_id]
     if not spec.supported or task_id in ('mad.mail','mad.stamina_claim'): return spec.resource
-    if task_id=='mad.material_sweep': return '共享本配置的素材目标 · 保留体力 '+str(routine['material_sweep'].get('reserve',0))
+    if task_id=='mad.material_sweep': return '按素材顺序分配次数 · 保留体力 '+str(routine['material_sweep'].get('reserve',0))
     if task_id=='mad.claim_all':
         return '、'.join(v for k,v in CLAIM_MODULES.items() if routine['claim_all']['modules'].get(k)) or '未选择子功能'
     item=routine[task_id[4:]]

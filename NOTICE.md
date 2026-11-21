@@ -35,6 +35,8 @@ MADAutoScript 贡献者自 2026-10-22 起加入 MAD ONEstore 的页面识别、�
 
 0.8.0 补充（2026-11-13）：素材分类选择器内置 61 张原始 WebP 图标，复用已采集的 [anyabot/MAD-Viewer](https://github.com/anyabot/MAD-Viewer/tree/c312e4e305cc57441e5bd615224642ea9b2168ce) 固定版本。逐项来源见 `src/images/materials/provenance.json`。图标版权仍归游戏原权利人；上游代码许可和本项目 GPL 均不授予这些游戏美术的版权。
 
+未发布补充（2026-11-19）：约会、商店及选关界面新增 88 张原始 WebP，来自同一固定版本；角色、地点、商品和区域的对应关系及上游文件路径记录在 `src/selection_catalog.json`。这些游戏美术沿用上述权利归属。`src/images/selections/unknown-character.svg` 为本项目绘制的中性占位图，随应用源码采用 GPL-3.0-only；功能图标复用现有 Fluent Widgets 资源。
+
 本项目由 MADAutoScript 维护者单独维护，不是 BAAS、MaaBd2、MaaFramework、MuMu 或游戏官方项目；致谢不表示任何上游参与维护、审核或背书。
 
 ## 分发说明

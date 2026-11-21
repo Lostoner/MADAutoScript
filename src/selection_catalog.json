@@ -1,0 +1,461 @@
+{
+  "source": "https://github.com/anyabot/MAD-Viewer",
+  "commit": "c312e4e305cc57441e5bd615224642ea9b2168ce",
+  "game_version": "1.11.6",
+  "use": "UI-only thumbnails; original WebP files. Not recognition templates or account progress.",
+  "copyright": "MAD game artwork; rights remain with original rights holders, not GPL artwork.",
+  "fallback": "src/images/selections/unknown-character.svg",
+  "characters": {
+    "夏洛特": {
+      "file": "src/images/selections/Icon_CH0028.webp",
+      "source_path": "public/icons/char/Icon_CH0028.webp",
+      "source_id": "CH0028"
+    },
+    "尤莉亚": {
+      "file": "src/images/selections/Icon_CH0035.webp",
+      "source_path": "public/icons/char/Icon_CH0035.webp",
+      "source_id": "CH0035"
+    },
+    "知世": {
+      "file": "src/images/selections/Icon_CH0011.webp",
+      "source_path": "public/icons/char/Icon_CH0011.webp",
+      "source_id": "CH0011"
+    },
+    "红蝶（万圣节）": {
+      "file": "src/images/selections/Icon_CH0075.webp",
+      "source_path": "public/icons/char/Icon_CH0075.webp",
+      "source_id": "CH0075"
+    },
+    "艾丝黛尔": {
+      "file": "src/images/selections/Icon_CH0033.webp",
+      "source_path": "public/icons/char/Icon_CH0033.webp",
+      "source_id": "CH0033"
+    },
+    "露米娜": {
+      "file": "src/images/selections/Icon_CH0036.webp",
+      "source_path": "public/icons/char/Icon_CH0036.webp",
+      "source_id": "CH0036"
+    },
+    "丹茜": {
+      "file": "src/images/selections/Icon_CH0020.webp",
+      "source_path": "public/icons/char/Icon_CH0020.webp",
+      "source_id": "CH0020"
+    },
+    "伊内斯": {
+      "file": "src/images/selections/Icon_CH0015.webp",
+      "source_path": "public/icons/char/Icon_CH0015.webp",
+      "source_id": "CH0015"
+    },
+    "伊莎贝尔": {
+      "file": "src/images/selections/Icon_CH0040.webp",
+      "source_path": "public/icons/char/Icon_CH0040.webp",
+      "source_id": "CH0040"
+    },
+    "克莱尔": {
+      "file": "src/images/selections/Icon_CH0005.webp",
+      "source_path": "public/icons/char/Icon_CH0005.webp",
+      "source_id": "CH0005"
+    },
+    "凯西": {
+      "file": "src/images/selections/Icon_CH0057.webp",
+      "source_path": "public/icons/char/Icon_CH0057.webp",
+      "source_id": "CH0057"
+    },
+    "卡伦": {
+      "file": "src/images/selections/Icon_CH0039.webp",
+      "source_path": "public/icons/char/Icon_CH0039.webp",
+      "source_id": "CH0039"
+    },
+    "卡莎": {
+      "file": "src/images/selections/Icon_CH0037.webp",
+      "source_path": "public/icons/char/Icon_CH0037.webp",
+      "source_id": "CH0037"
+    },
+    "塞塔": {
+      "file": "src/images/selections/Icon_CH0034.webp",
+      "source_path": "public/icons/char/Icon_CH0034.webp",
+      "source_id": "CH0034"
+    },
+    "塞雯": {
+      "file": "src/images/selections/Icon_CH0030.webp",
+      "source_path": "public/icons/char/Icon_CH0030.webp",
+      "source_id": "CH0030"
+    },
+    "奥布莉亚": {
+      "file": "src/images/selections/Icon_CH0042.webp",
+      "source_path": "public/icons/char/Icon_CH0042.webp",
+      "source_id": "CH0042"
+    },
+    "影": {
+      "file": "src/images/selections/Icon_CH0025.webp",
+      "source_path": "public/icons/char/Icon_CH0025.webp",
+      "source_id": "CH0025"
+    },
+    "拉菲娜": {
+      "file": "src/images/selections/Icon_CH0043.webp",
+      "source_path": "public/icons/char/Icon_CH0043.webp",
+      "source_id": "CH0043"
+    },
+    "日向": {
+      "file": "src/images/selections/Icon_CH0031.webp",
+      "source_path": "public/icons/char/Icon_CH0031.webp",
+      "source_id": "CH0031"
+    },
+    "比安卡": {
+      "file": "src/images/selections/Icon_CH0058.webp",
+      "source_path": "public/icons/char/Icon_CH0058.webp",
+      "source_id": "CH0058"
+    },
+    "爱莲": {
+      "file": "src/images/selections/Icon_CH0056.webp",
+      "source_path": "public/icons/char/Icon_CH0056.webp",
+      "source_id": "CH0056"
+    },
+    "特丽丝": {
+      "file": "src/images/selections/Icon_CH0062.webp",
+      "source_path": "public/icons/char/Icon_CH0062.webp",
+      "source_id": "CH0062"
+    },
+    "玛莎": {
+      "file": "src/images/selections/Icon_CH0012.webp",
+      "source_path": "public/icons/char/Icon_CH0012.webp",
+      "source_id": "CH0012"
+    },
+    "珍": {
+      "file": "src/images/selections/Icon_CH0053.webp",
+      "source_path": "public/icons/char/Icon_CH0053.webp",
+      "source_id": "CH0053"
+    },
+    "珍妮": {
+      "file": "src/images/selections/Icon_CH0046.webp",
+      "source_path": "public/icons/char/Icon_CH0046.webp",
+      "source_id": "CH0046"
+    },
+    "瓦伦蒂娜": {
+      "file": "src/images/selections/Icon_CH0038.webp",
+      "source_path": "public/icons/char/Icon_CH0038.webp",
+      "source_id": "CH0038"
+    },
+    "秀智": {
+      "file": "src/images/selections/Icon_CH0032.webp",
+      "source_path": "public/icons/char/Icon_CH0032.webp",
+      "source_id": "CH0032"
+    },
+    "米欧": {
+      "file": "src/images/selections/Icon_CH0050.webp",
+      "source_path": "public/icons/char/Icon_CH0050.webp",
+      "source_id": "CH0050"
+    },
+    "索菲亚": {
+      "file": "src/images/selections/Icon_CH0026.webp",
+      "source_path": "public/icons/char/Icon_CH0026.webp",
+      "source_id": "CH0026"
+    },
+    "红蝶": {
+      "file": "src/images/selections/Icon_CH0021.webp",
+      "source_path": "public/icons/char/Icon_CH0021.webp",
+      "source_id": "CH0021"
+    },
+    "维多利亚": {
+      "file": "src/images/selections/Icon_CH0019.webp",
+      "source_path": "public/icons/char/Icon_CH0019.webp",
+      "source_id": "CH0019"
+    },
+    "罗娜": {
+      "file": "src/images/selections/Icon_CH0023.webp",
+      "source_path": "public/icons/char/Icon_CH0023.webp",
+      "source_id": "CH0023"
+    },
+    "罗曼斯爵士": {
+      "file": "src/images/selections/Icon_CH0013.webp",
+      "source_path": "public/icons/char/Icon_CH0013.webp",
+      "source_id": "CH0013"
+    },
+    "艾丽西亚": {
+      "file": "src/images/selections/Icon_CH0009.webp",
+      "source_path": "public/icons/char/Icon_CH0009.webp",
+      "source_id": "CH0009"
+    },
+    "艾琳": {
+      "file": "src/images/selections/Icon_CH0006.webp",
+      "source_path": "public/icons/char/Icon_CH0006.webp",
+      "source_id": "CH0006"
+    },
+    "艾米丽": {
+      "file": "src/images/selections/Icon_CH0027.webp",
+      "source_path": "public/icons/char/Icon_CH0027.webp",
+      "source_id": "CH0027"
+    },
+    "芙蕾雅": {
+      "file": "src/images/selections/Icon_CH0029.webp",
+      "source_path": "public/icons/char/Icon_CH0029.webp",
+      "source_id": "CH0029"
+    },
+    "荷莉": {
+      "file": "src/images/selections/Icon_CH0054.webp",
+      "source_path": "public/icons/char/Icon_CH0054.webp",
+      "source_id": "CH0054"
+    },
+    "莎拉": {
+      "file": "src/images/selections/Icon_CH0063.webp",
+      "source_path": "public/icons/char/Icon_CH0063.webp",
+      "source_id": "CH0063"
+    },
+    "莱拉": {
+      "file": "src/images/selections/Icon_CH0002.webp",
+      "source_path": "public/icons/char/Icon_CH0002.webp",
+      "source_id": "CH0002"
+    },
+    "蕾安娜": {
+      "file": "src/images/selections/Icon_CH0016.webp",
+      "source_path": "public/icons/char/Icon_CH0016.webp",
+      "source_id": "CH0016"
+    },
+    "露西亚": {
+      "file": "src/images/selections/Icon_CH0001.webp",
+      "source_path": "public/icons/char/Icon_CH0001.webp",
+      "source_id": "CH0001"
+    },
+    "马内（泳装）": {
+      "file": "src/images/selections/Icon_CH0010.webp",
+      "source_path": "public/icons/char/Icon_CH0010.webp",
+      "source_id": "CH0010"
+    },
+    "零": {
+      "file": "src/images/selections/unknown-character.svg",
+      "status": "unmapped",
+      "note": "旧角色名称尚未与公开角色表对应，保留原选择值，头像待补。"
+    },
+    "马内": {
+      "file": "src/images/selections/Icon_CH0007.webp",
+      "source_path": "public/icons/char/Icon_CH0007.webp",
+      "source_id": "CH0007"
+    }
+  },
+  "places": {
+    "渡口": {
+      "file": "src/images/selections/Thumbnail_Flirting_River_Ferry.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_River_Ferry.webp",
+      "source_id": "100303"
+    },
+    "天灯街": {
+      "file": "src/images/selections/Thumbnail_Flirting_Festivalstreet.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Festivalstreet.webp",
+      "source_id": "100302"
+    },
+    "华西园": {
+      "file": "src/images/selections/Thumbnail_Flirting_Quartet_Park.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Quartet_Park.webp",
+      "source_id": "100301"
+    },
+    "和平楼": {
+      "file": "src/images/selections/Thumbnail_Flirting_Hwapyeongru_Restaurant.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Hwapyeongru_Restaurant.webp",
+      "source_id": "100304"
+    },
+    "雪海温泉": {
+      "file": "src/images/selections/Thumbnail_Flirting_Spa_House.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Spa_House.webp",
+      "source_id": "100305"
+    },
+    "DD镇": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_DDTOWN_Street.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_DDTOWN_Street.webp",
+      "source_id": "110"
+    },
+    "豆腐街": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_TofuStreet.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_TofuStreet.webp",
+      "source_id": "108"
+    },
+    "甜甜圈屋": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_Donut_House.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_Donut_House.webp",
+      "source_id": "107"
+    },
+    "繁华街": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_City_Downtown.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_City_Downtown.webp",
+      "source_id": "103"
+    },
+    "湖水公园": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_Park.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_Park.webp",
+      "source_id": "102"
+    },
+    "宴会厅": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_Banquet_Hall.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_Banquet_Hall.webp",
+      "source_id": "100204"
+    },
+    "菲尔哈莫尼修道院": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_Feel_Harmony.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_Feel_Harmony.webp",
+      "source_id": "100205"
+    },
+    "贝尔蒙特广场": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_City_Piazza.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_City_Piazza.webp",
+      "source_id": "100201"
+    },
+    "血腥玛丽": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_Bloody_Mary.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_Bloody_Mary.webp",
+      "source_id": "100203"
+    },
+    "咖啡街": {
+      "file": "src/images/selections/Thumbnail_Flirting_Place_CafeTerrace.webp",
+      "source_path": "public/icons/place/Thumbnail_Flirting_Place_CafeTerrace.webp",
+      "source_id": "100202"
+    }
+  },
+  "shop": {
+    "c_battle_log": {
+      "file": "src/images/selections/Icon_Char_Levelup_Rank_C_Tier1.webp",
+      "source_path": "public/icons/item/Icon_Char_Levelup_Rank_C_Tier1.webp",
+      "source_id": "item:10011"
+    },
+    "b_battle_log": {
+      "file": "src/images/selections/Icon_Char_Levelup_Rank_B_Tier2.webp",
+      "source_path": "public/icons/item/Icon_Char_Levelup_Rank_B_Tier2.webp",
+      "source_id": "item:10012"
+    },
+    "a_battle_log": {
+      "file": "src/images/selections/Icon_Char_Levelup_Rank_A_Tier3.webp",
+      "source_path": "public/icons/item/Icon_Char_Levelup_Rank_A_Tier3.webp",
+      "source_id": "item:10013"
+    },
+    "sample_essence": {
+      "file": "src/images/selections/Icon_Eq_GrowUp_Tier1.webp",
+      "source_path": "public/icons/item/Icon_Eq_GrowUp_Tier1.webp",
+      "source_id": "item:10021"
+    },
+    "small_essence": {
+      "file": "src/images/selections/Icon_Eq_GrowUp_Tier2.webp",
+      "source_path": "public/icons/item/Icon_Eq_GrowUp_Tier2.webp",
+      "source_id": "item:10022"
+    },
+    "medium_essence": {
+      "file": "src/images/selections/Icon_Eq_GrowUp_Tier3.webp",
+      "source_path": "public/icons/item/Icon_Eq_GrowUp_Tier3.webp",
+      "source_id": "item:10023"
+    }
+  },
+  "stages": {
+    "normal:1": {
+      "file": "src/images/selections/BgImg_Stage_Zone_001.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_001.webp",
+      "source_id": "10011"
+    },
+    "normal:2": {
+      "file": "src/images/selections/BgImg_Stage_Zone_002.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_002.webp",
+      "source_id": "10021"
+    },
+    "normal:3": {
+      "file": "src/images/selections/BgImg_Stage_Zone_003.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_003.webp",
+      "source_id": "10031"
+    },
+    "normal:4": {
+      "file": "src/images/selections/BgImg_Stage_Zone_004.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_004.webp",
+      "source_id": "10041"
+    },
+    "normal:5": {
+      "file": "src/images/selections/BgImg_Stage_Zone_005.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_005.webp",
+      "source_id": "10051"
+    },
+    "normal:6": {
+      "file": "src/images/selections/BgImg_Stage_Zone_006.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_006.webp",
+      "source_id": "10061"
+    },
+    "normal:7": {
+      "file": "src/images/selections/BgImg_Stage_Zone_007.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_007.webp",
+      "source_id": "10071"
+    },
+    "normal:8": {
+      "file": "src/images/selections/BgImg_Stage_Zone_008.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_008.webp",
+      "source_id": "10081"
+    },
+    "normal:9": {
+      "file": "src/images/selections/BgImg_Stage_Zone_009.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_009.webp",
+      "source_id": "10091"
+    },
+    "normal:10": {
+      "file": "src/images/selections/BgImg_Stage_Zone_010.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_010.webp",
+      "source_id": "10101"
+    },
+    "normal:11": {
+      "file": "src/images/selections/BgImg_Stage_Zone_011.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_011.webp",
+      "source_id": "10111"
+    },
+    "normal:12": {
+      "file": "src/images/selections/BgImg_Stage_Zone_012.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_012.webp",
+      "source_id": "10121"
+    },
+    "normal:13": {
+      "file": "src/images/selections/BgImg_Stage_Zone_013.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_013.webp",
+      "source_id": "10131"
+    },
+    "normal:14": {
+      "file": "src/images/selections/BgImg_Stage_Zone_014.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_014.webp",
+      "source_id": "10141"
+    },
+    "normal:15": {
+      "file": "src/images/selections/BgImg_Stage_Zone_015.webp",
+      "source_path": "public/icons/zone/BgImg_Stage_Zone_015.webp",
+      "source_id": "10151"
+    },
+    "procurement:数据窃取": {
+      "file": "src/images/selections/BgImg_Daily_Cover_Experience.webp",
+      "source_path": "public/icons/tile/BgImg_Daily_Cover_Experience.webp",
+      "source_id": "daily:30401"
+    },
+    "procurement:勒索钱财": {
+      "file": "src/images/selections/BgImg_Daily_Cover_Credit.webp",
+      "source_path": "public/icons/tile/BgImg_Daily_Cover_Credit.webp",
+      "source_id": "daily:30402"
+    },
+    "procurement:洗衣店袭击": {
+      "file": "src/images/selections/BgImg_Daily_Cover_Essence.webp",
+      "source_path": "public/icons/tile/BgImg_Daily_Cover_Essence.webp",
+      "source_id": "daily:30403"
+    },
+    "procurement:截获快递": {
+      "file": "src/images/selections/BgImg_Daily_Cover_DeliveryBox.webp",
+      "source_path": "public/icons/tile/BgImg_Daily_Cover_DeliveryBox.webp",
+      "source_id": "daily:30404"
+    },
+    "flara:热情的锻炼场": {
+      "file": "src/images/selections/BgImg_Attribute_Cover_Fit.webp",
+      "source_path": "public/icons/tile/BgImg_Attribute_Cover_Fit.webp",
+      "source_id": "flurry:30501"
+    },
+    "flara:欲望的赞美堂": {
+      "file": "src/images/selections/BgImg_Attribute_Cover_Bad.webp",
+      "source_path": "public/icons/tile/BgImg_Attribute_Cover_Bad.webp",
+      "source_id": "flurry:30502"
+    },
+    "flara:意志的休息处": {
+      "file": "src/images/selections/BgImg_Attribute_Bg_Maid.webp",
+      "source_path": "public/icons/tile/BgImg_Attribute_Bg_Maid.webp",
+      "source_id": "flurry:30503"
+    },
+    "flara:理性的博弈馆": {
+      "file": "src/images/selections/BgImg_Attribute_Cover_Bunny.webp",
+      "source_path": "public/icons/tile/BgImg_Attribute_Cover_Bunny.webp",
+      "source_id": "flurry:30504"
+    }
+  }
+}

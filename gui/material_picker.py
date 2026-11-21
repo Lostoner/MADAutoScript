@@ -55,7 +55,7 @@ class MaterialTileDelegate(QStyledItemDelegate):
         painter.drawText(QRect(rect.left()+6,rect.top()+96,rect.width()-12,18),Qt.AlignCenter,index.data(Qt.UserRole+1))
         if selected:
             painter.setFont(ui_font(16)); painter.setPen(QColor(s['accent']))
-            painter.drawText(QRect(rect.right()-26,rect.top()+5,20,22),Qt.AlignCenter,'✓')
+            painter.drawText(QRect(rect.right()-40,rect.top()+5,36,22),Qt.AlignCenter,str(index.data(Qt.UserRole+2) or '✓'))
         painter.restore()
 
 
@@ -188,6 +188,10 @@ class MaterialPicker(QDialog):
 
     def update_selection_note(self):
         count=len(self.selection)
+        order={ref:i+1 for i,ref in enumerate(self.selection)}
+        for ref,row in self.rows.items():
+            row.setData(Qt.UserRole+2,order.get(ref))
+            row.setData(Qt.AccessibleDescriptionRole,'已选第 '+str(order[ref])+' 项' if ref in order else '')
         names=[self.items[r]['name'] for r in self.selection]
         self.selected_note.setText(('已选 '+str(count)+' 项：'+'、'.join(names[:2])+(' 等' if count>2 else '')) if count
                                    else '可跨分类多选；已添加的素材不重复添加。')

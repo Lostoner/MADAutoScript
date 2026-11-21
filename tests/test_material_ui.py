@@ -181,19 +181,23 @@ class MaterialUI(TestCase):
         picker.choose_tier(3); click('item:80302')
         picker.search.setText('信用点'); click('goods:1')
         self.assertEqual(picker.selection,[A,'item:80302','goods:1'])
+        self.assertEqual(picker.rows['goods:1'].data(Qt.UserRole+2),3)
         self.assertIn('3',picker.add_button.text())
         picker.choose_category('voucher'); picker.choose_tier(2)
         self.assertTrue(picker.rows[A].isSelected())
         picker.grid.setFocus(); picker.grid.setCurrentItem(picker.rows[A])
         QTest.keyClick(picker.grid,Qt.Key_Space)
         self.assertNotIn(A,picker.selection)
+        QTest.keyClick(picker.grid,Qt.Key_Space)
+        self.assertEqual(picker.selection,['item:80302','goods:1',A])
+        self.assertEqual(picker.rows[A].data(Qt.UserRole+2),3)
         picker.clear_button.click(); self.assertEqual(picker.selection,[])
         self.assertFalse(picker.add_button.isEnabled())
 
     def test_picker_batch_add_cancel_and_existing_draft_preservation(self):
         from PyQt5.QtCore import QTimer
         from PyQt5.QtWidgets import QApplication
-        self.dialog.add_target(A,50); self.dialog.table.cellWidget(0,3).setValue(75)
+        self.dialog.add_target(A,50); self.dialog.amount_box(0).setValue(75)
         def choose():
             picker=QApplication.activeModalWidget(); self.assertIsInstance(picker,MaterialPicker)
             picker.choose_tier(3)
@@ -213,3 +217,73 @@ class MaterialUI(TestCase):
         self.assertEqual(len(self.dialog.values()),3)
         self.assertEqual(self.dialog.store.definitions()['targets'],[])
         self.assertIsNone(self.window.worker)
+
+    def test_default_quantity_free_order_buttons_keyboard_and_drop_persist(self):
+        from PyQt5.QtCore import Qt,QMimeData
+        from PyQt5.QtTest import QTest
+        refs=['item:80204',A,'goods:1']
+        self.dialog.add_targets(refs); self.dialog.show(); self.app.processEvents()
+        self.assertTrue(self.dialog.table.isColumnHidden(3))
+        self.assertTrue(all(not t['stock_limit_enabled'] and t['amount'] is None for t in self.dialog.values()))
+        self.dialog.table.selectRow(1); self.dialog.up.click()
+        self.assertEqual([t['ref'] for t in self.dialog.values()],[A,refs[0],refs[2]])
+        self.dialog.table.setFocus(); QTest.keyClick(self.dialog.table,Qt.Key_Down,Qt.AltModifier)
+        self.assertEqual([t['ref'] for t in self.dialog.values()],refs)
+        mime=QMimeData(); mime.setData(self.dialog.table.MIME,b'2')
+        drop=Mock(); drop.source.return_value=self.dialog.table; drop.mimeData.return_value=mime
+        drop.pos.return_value=self.dialog.table.visualItemRect(self.dialog.table.item(0,1)).center()
+        self.dialog.table.dropEvent(drop); drop.acceptProposedAction.assert_called_once()
+        self.assertEqual([t['ref'] for t in self.dialog.values()],['goods:1',*refs[:2]])
+        self.assertTrue(self.dialog.save_targets()); self.assertIsNone(self.window.worker)
+        self.assertEqual([t['ref'] for t in MaterialStore(self.repo).definitions()['targets']],['goods:1',*refs[:2]])
+        self.dialog.table.cellWidget(0,0).setChecked(False)
+        self.assertEqual(self.dialog.table.item(0,6).text(),'已暂停')
+        self.dialog.table.cellWidget(0,0).setChecked(True)
+        self.assertEqual(self.dialog.table.item(0,6).text(),'按次数分配')
+
+    def test_stock_condition_requires_amount_only_when_on_and_bulk_off_is_draft(self):
+        from PyQt5.QtWidgets import QMessageBox
+        self.dialog.add_target(A)
+        condition=self.dialog.table.cellWidget(0,5); condition.setChecked(True)
+        self.assertFalse(self.dialog.table.isColumnHidden(3))
+        self.assertEqual(self.dialog.table.item(0,6).text(),'待设置数量')
+        self.assertFalse(self.dialog.save_targets())
+        self.dialog.amount_box(0).setValue(50)
+        self.assertEqual(self.dialog.table.item(0,6).text(),'待达标')
+        self.assertTrue(self.dialog.save_targets())
+        self.dialog.add_target('goods:1'); self.dialog.show(); self.app.processEvents()
+        self.assertTrue(self.dialog.amount_box(1).isHidden())
+        self.assertFalse(self.dialog.amount_box(0).isHidden())
+        self.dialog.resize(760,540); self.app.processEvents()
+        self.assertGreaterEqual(self.dialog.table.columnWidth(1),240)
+        self.assertGreater(self.dialog.table.horizontalScrollBar().maximum(),0)
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.Yes): self.dialog.disable_stock_goals()
+        self.assertFalse(self.dialog.values()[0]['stock_limit_enabled'])
+        self.assertEqual(self.dialog.values()[0]['amount'],50)
+        self.assertTrue(self.dialog.store.definitions()['targets'][0]['stock_limit_enabled'])
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.Discard): self.dialog.reject()
+        self.assertTrue(self.dialog.store.definitions()['targets'][0]['stock_limit_enabled'])
+
+    def test_frozen_counts_preview_and_shared_status_keep_independent_debt(self):
+        from core.material_planner import plan
+        self.dialog.add_target(A); self.dialog.save_targets()
+        scope='plan:'+PlanStore(self.repo).today(); self.dialog.scope=scope
+        store=self.dialog.store; snapshot=store.freeze(scope,scope)
+        obs={'inventory':{},'balance':100,'stages':{'normal:4-1':{'status':'sweepable'}},'source':'game','at':1}
+        store.observe(obs,snapshot); store.save_allocation(scope,'front',TASK,plan(snapshot,obs,{}))
+        batch=store.prepare_batch(scope,TASK,'normal:4-1',6,[A],'front'); store.result_seen(batch,6); store.settle(batch,{})
+        self.dialog.refresh_preview()
+        self.assertEqual(self.dialog.preview.item(0,3).text(),'10')
+        self.assertEqual(self.dialog.preview.item(0,4).text(),'6 / 4')
+        self.dialog.tabs.setCurrentIndex(1); self.dialog.resize(760,540); self.dialog.show(); self.app.processEvents()
+        self.assertLess(self.dialog.rule_target.geometry().right(),self.dialog.rule_stage.geometry().left())
+        self.assertTrue(self.dialog.rect().contains(self.dialog.save_button.geometry()))
+        event={'kind':'result','state':'succeeded','result':{'tasks':[dict(task_id=TASK,instance_id=TASK,status='PARTIAL',
+            material_context=scope,material_allocation='front',remaining=[{'stage_id':'normal:4-1','count':4}])]}}
+        self.window.routineInterface.on_event(event)
+        self.assertEqual(self.window.routineInterface.cards[TASK].result.text(),'有余项 · 4 次')
+        self.assertEqual(self.window._display_tasks(event)[0]['status'],'PARTIAL')
+        batch=store.prepare_batch(scope,TASK,'normal:4-1',4,[A],'front'); store.result_seen(batch,4); store.settle(batch,{})
+        self.window.routineInterface.on_event(event)
+        self.assertEqual(self.window.routineInterface.cards[TASK].result.text(),'已完成')
+        self.assertEqual(self.window._display_tasks(event)[0]['status'],'SUCCESS')

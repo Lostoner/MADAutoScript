@@ -28,6 +28,9 @@ PUBLIC = [
     'tests/test_plan_editor.py', 'tests/test_plan_window.py',
     'src/game_catalog.json', 'src/material_catalog.json', 'docs/MATERIAL_GOALS.md',
     'tests/test_material_goals.py', 'tests/test_material_ui.py',
+    'tests/test_material_priority.py', 'tests/test_material_schedule.py',
+    'docs/MATERIAL_PRIORITY_SWEEP_DESIGN.md', 'docs/MATERIAL_PRIORITY_ACCEPTANCE.md',
+    'tests/test_selection_thumbnails.py', 'docs/SELECTION_THUMBNAILS.md',
     'licenses/SOURCES.json', 'licenses/PyQt5-5.15.11-GPL.txt',
     'licenses/apkutils2-1.0.0-MIT.txt', 'licenses/cigam-0.0.3-MIT.txt',
     'licenses/retry-0.9.2-NOTICE.txt', 'licenses/Apache-2.0.txt',
@@ -49,6 +52,11 @@ def public_catalog(data):
 def material_assets():
     data=json.loads((ROOT/'src/material_catalog.json').read_text('utf-8'))
     return sorted({'src/images/materials/provenance.json', *(i['icon'] for i in data['items'].values())})
+
+def selection_assets():
+    data=json.loads((ROOT/'src/selection_catalog.json').read_text('utf-8'))
+    return sorted({'src/selection_catalog.json', data['fallback'],
+                   *(r['file'] for group in ('characters','places','shop','stages') for r in data[group].values())})
 
 def assert_no_private_paths(folder, roots):
     """Check raw, JSON-escaped and URI paths, including strings in runtime binaries."""
@@ -158,7 +166,7 @@ def main():
     source = output/'source/MADAutoScript'
     portable = output/'windows/MADAutoScript'
     modules = source_files()
-    for relative in sorted(set(PUBLIC + modules + material_assets())):
+    for relative in sorted(set(PUBLIC + modules + material_assets() + selection_assets())):
         copy_file(ROOT/relative, source/relative)
     write_json(source/'src/game_catalog.json',
                public_catalog(json.loads((ROOT/'src/game_catalog.json').read_text('utf-8'))))

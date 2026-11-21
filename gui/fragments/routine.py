@@ -1,11 +1,11 @@
 """Task cards edit the existing BAAS-style queue and configuration draft."""
 from copy import deepcopy
 from uuid import uuid4
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QHeaderView,
                             QDialog, QDialogButtonBox, QComboBox, QInputDialog,
                             QListWidgetItem, QAbstractItemView, QTableWidgetItem)
-from qfluentwidgets import ScrollArea, CheckBox, SpinBox, PushButton, TableWidget
+from qfluentwidgets import ScrollArea, CheckBox, SpinBox, PushButton, TableWidget, FlowLayout
 from core.routine_catalog import ROUTINES, parameter_summary, CLAIM_MODULES, default_routine
 from core.config.default_config import default_events
 from core.config.repository import instance_params
@@ -14,6 +14,8 @@ from core.mad_features import MAP_LOCATIONS
 from gui.widgets import TaskCard, CheckableListWidget
 from gui.theme import typography, apply_typography
 from gui.run_summary import RESULT_TEXT
+from gui.selection_thumbnails import (decorate_item, prepare_thumbnail_combo,
+    add_thumbnail_choice, action_icon)
 
 
 class SweepSelector(QWidget):
@@ -28,6 +30,7 @@ class SweepSelector(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(8)
         self.table = TableWidget(self)
+        self.table.setIconSize(QSize(36, 36))
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(['关卡 / 执行顺序', '计划次数', '本轮剩余', ''])
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -59,7 +62,9 @@ class SweepSelector(QWidget):
         self.table.setRowCount(len(plans))
         for row, plan in enumerate(plans):
             key = plan['stage_id']
-            self.table.setItem(row, 0, QTableWidgetItem(self.options.get(key, {}).get('title', key)))
+            item = QTableWidgetItem(self.options.get(key, {}).get('title', key))
+            decorate_item(item, 'stages', key)
+            self.table.setItem(row, 0, item)
             count = SpinBox(self.table)
             count.setRange(0, 2147483647)
             count.setSpecialValueText('MAX')
@@ -118,16 +123,22 @@ class SweepSelector(QWidget):
         dialog.resize(450, 510)
         layout = QVBoxLayout(dialog)
         group = QComboBox(dialog)
+        prepare_thumbnail_combo(group)
         group.addItem('全部分类')
-        group.addItems(list(dict.fromkeys(o['group'] for o in self.options.values())))
+        groups = {}
+        for key, option in self.options.items(): groups.setdefault(option['group'], key)
+        for title, key in groups.items(): add_thumbnail_choice(group, 'stages', key, title)
         layout.addWidget(group)
         caption = QLabel('点击整行勾选，可多选；已添加的关卡保持原顺序和次数。', dialog)
         caption.setWordWrap(True)
         layout.addWidget(caption)
         choices = CheckableListWidget(dialog)
         choices.setObjectName('stageChoices')
+        choices.setIconSize(QSize(40, 40))
         for key, option in self.options.items():
             item = QListWidgetItem(option['title'], choices)
+            decorate_item(item, 'stages', key)
+            item.setSizeHint(QSize(0, 48))
             item.setData(Qt.UserRole, key)
             if key in self._order:
                 item.setText(option['title'] + ' · 已添加')
@@ -179,10 +190,10 @@ class TaskEditor:
             self.selector = selector
             layout.addWidget(selector)
         elif task == 'mad.material_sweep':
-            label('共享本配置的素材目标。库存达标一次后结束；可在领奖前后各放一条。')
+            label('勾选素材并排序，按权重分配可用体力；可选库存达标停止，也可在领奖前后各放一条。')
             row = QHBoxLayout()
             self.material_buttons = {}
-            for title,action in [('编辑目标','goals'),('查看目标表','plan'),('同步游戏数据','sync')]:
+            for title,action in [('选择素材与排序','goals'),('查看扫荡安排','plan'),('刷新游戏数据','sync')]:
                 button = PushButton(title,card.body)
                 button.clicked.connect(lambda _,a=action:self.material_action(a))
                 row.addWidget(button)
@@ -195,6 +206,7 @@ class TaskEditor:
         elif task == 'mad.gold_shop':
             label('选择要购买的普通商品，每项独立设置数量；0 为 MAX（买完当前可购买数量）。')
             self.shop_table = TableWidget(card.body)
+            self.shop_table.setIconSize(QSize(36, 36))
             self.shop_table.setColumnCount(4)
             self.shop_table.setHorizontalHeaderLabels(['购买', '商品', '单价 / 金币', '数量'])
             self.shop_table.setRowCount(len(SHOP_ITEMS))
@@ -220,7 +232,9 @@ class TaskEditor:
                 count.valueChanged.connect(self._changed)
                 self.shop_checks[key], self.shop_counts[key] = check, count
                 self.shop_table.setCellWidget(row, 0, check)
-                self.shop_table.setItem(row, 1, QTableWidgetItem(product['title']))
+                name = QTableWidgetItem(product['title'])
+                decorate_item(name, 'shop', key)
+                self.shop_table.setItem(row, 1, name)
                 self.shop_table.setItem(row, 2, QTableWidgetItem(f'{product["price"]:,}'))
                 self.shop_table.setCellWidget(row, 3, count)
                 self.shop_table.setRowHeight(row, 42)
@@ -229,8 +243,11 @@ class TaskEditor:
         elif task == 'mad.dating':
             row = QHBoxLayout()
             self.dating_character = QComboBox(card.body)
+            self.dating_character.setAccessibleName('约会角色')
+            prepare_thumbnail_combo(self.dating_character, QSize(40, 40))
+            self.dating_character.view().setMinimumWidth(280)
             self.dating_character.addItem('请选择角色', '')
-            for name in characters(): self.dating_character.addItem(name, name)
+            for name in characters(): add_thumbnail_choice(self.dating_character, 'characters', name)
             self.dating_character.setMinimumWidth(180)
             self.dating_count = SpinBox(card.body)
             self.dating_count.setRange(1, 3)
@@ -244,15 +261,25 @@ class TaskEditor:
             label('各地图地点优先顺序')
             self.location_choices = {}
             for map_id, locations in MAP_LOCATIONS.items():
-                row = QHBoxLayout()
-                row.addWidget(QLabel(map_id, card.body))
+                label(map_id)
+                row = FlowLayout()
+                row.setContentsMargins(0, 0, 0, 0)
+                row.setHorizontalSpacing(8); row.setVerticalSpacing(8)
                 choices = []
                 for index in range(3):
+                    field = QWidget(card.body)
+                    field_layout = QHBoxLayout(field); field_layout.setContentsMargins(0, 0, 0, 0)
+                    field_layout.addWidget(QLabel(str(index + 1), field))
                     choice = QComboBox(card.body)
-                    choice.addItems(list(locations))
-                    choice.setToolTip('地点优先顺序 ' + str(index + 1))
+                    title = map_id + ' · 地点优先顺序 ' + str(index + 1)
+                    choice.setAccessibleName(title)
+                    prepare_thumbnail_combo(choice, QSize(48, 24), prefix=title)
+                    choice.setMinimumWidth(220)
+                    choice.view().setMinimumWidth(240)
+                    for name in locations: add_thumbnail_choice(choice, 'places', name)
                     choice.currentTextChanged.connect(self._changed)
-                    row.addWidget(choice, 1)
+                    field_layout.addWidget(choice)
+                    row.addWidget(field)
                     choices.append(choice)
                 layout.addLayout(row)
                 self.location_choices[map_id] = choices
@@ -260,6 +287,8 @@ class TaskEditor:
             label('依次检查所选页面；活动等待单独规则。')
             for key, title in CLAIM_MODULES.items():
                 check = CheckBox(title, card.body)
+                check.setIcon(action_icon(key))
+                check.setIconSize(QSize(24, 24))
                 check.setEnabled(key != 'activity')
                 check.toggled.connect(self._changed)
                 self.claim_checks[key] = check
@@ -308,7 +337,7 @@ class TaskEditor:
             name = params['character']
             index = self.dating_character.findData(name)
             if index < 0 and name:
-                self.dating_character.addItem(name + '（原配置）', name)
+                add_thumbnail_choice(self.dating_character, 'characters', name, name + '（原配置）')
                 index = self.dating_character.count() - 1
             self.dating_character.setCurrentIndex(max(0, index))
             self.dating_count.setValue(params['count'])
@@ -383,8 +412,15 @@ class RoutineFragment(ScrollArea):
 
     def _choose_task(self):
         options = {s.title: k for k, s in ROUTINES.items() if s.supported}
-        name, ok = QInputDialog.getItem(self, '添加指令', '选择功能', list(options), 0, False)
-        if ok: self.add_instance(options[name])
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle('添加指令'); dialog.setLabelText('选择功能')
+        dialog.setComboBoxItems(list(options)); dialog.setComboBoxEditable(False)
+        choice = dialog.findChild(QComboBox)
+        prepare_thumbnail_combo(choice, QSize(24, 24))
+        for i, task in enumerate(options.values()): choice.setItemIcon(i, action_icon(task))
+        apply_typography(dialog)
+        if dialog.exec_() == QDialog.Accepted: self.add_instance(options[dialog.textValue()])
+        dialog.deleteLater()
 
     def add_instance(self, task, source=None):
         if self._busy or not ROUTINES[task].supported: return
@@ -490,7 +526,7 @@ class RoutineFragment(ScrollArea):
             combo.clear()
             combo.addItem('按自己的调度时间执行', '')
             for parent, name in claims:
-                if key != parent: combo.addItem('在「' + name + '」之后执行', parent)
+                if key != parent: combo.addItem(action_icon('mad.claim_all'), '在「' + name + '」之后执行', parent)
             combo.setCurrentIndex(max(0, combo.findData(self._event(key).get('follow_after') or '')))
             combo.setEnabled(key not in parents)
             combo.setToolTip('有其他指令跟随本指令。' if key in parents else '')
@@ -657,8 +693,8 @@ class RoutineFragment(ScrollArea):
                     from core.material_store import MaterialStore
                     store=MaterialStore(self.repository)
                     round_=store.state()['rounds'].get(item['material_context'])
-                    if round_ and not store.remaining(round_['snapshot']):
-                        self._results[task]=('已完成','共享素材目标已达成。')
+                    if round_ and not store.needs_work(item['material_context'],item.get('material_allocation')):
+                        self._results[task]=('已完成','本次安排和库存条件已完成。')
         elif kind == 'state' and event.get('state') == 'starting':
             self._results.clear()
             self._active = None
@@ -671,8 +707,11 @@ class RoutineFragment(ScrollArea):
             self.theme.apply_surface(selector.table, 'input')
             self.theme.apply_surface(selector.table.viewport(), 'input')
         for editor in self.editors.values():
+            for key, check in editor.claim_checks.items(): check.setIcon(action_icon(key))
             if editor.task == 'mad.gold_shop':
                 self.theme.apply_surface(editor.shop_table, 'input')
                 self.theme.apply_surface(editor.shop_table.viewport(), 'input')
+        for choice in self.follow_choices.values():
+            for i in range(1, choice.count()): choice.setItemIcon(i, action_icon('mad.claim_all'))
         self.feedback.setStyleSheet('color:' + self.theme.surfaces['muted'] + ';')
         apply_typography(self)

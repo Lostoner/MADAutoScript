@@ -238,6 +238,11 @@ class MadThread:
                 self.task_params[kind[4:]]=deepcopy(instance_params(config,event))
                 self.task_details={}
                 identity={'task_id':kind,'instance_id':key,'event_name':title}
+                if kind=='mad.material_sweep':
+                    generation=group.get('material_generations',{}).get(json.dumps(token),0)
+                    self.material_allocation_id=json.dumps([root,*token,group.get('cycle'),generation],ensure_ascii=False)
+                    self.material_inventory_only=bool(generation)
+                    identity['material_allocation']=self.material_allocation_id
                 if self.plan_pass: self.plan_pass.begin_step(root,token,identity)
                 self.emit('task',title,**identity,state='running')
                 self.next_time=0

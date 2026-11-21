@@ -13,7 +13,7 @@ class PickerAndShopUI(TestCase):
     def test_three_pickers_and_shop_roundtrip(self):
         from main import create_window
         from PyQt5.QtCore import QTimer, Qt, QPoint
-        from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QComboBox
+        from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QComboBox, QStyleOptionViewItem, QStyle
         from PyQt5.QtTest import QTest
         from gui.widgets import CheckableListWidget
         with TemporaryDirectory(prefix='mad-picker-') as temporary:
@@ -35,6 +35,8 @@ class PickerAndShopUI(TestCase):
                             try:
                                 choices = dialog.findChild(CheckableListWidget)
                                 combo = dialog.findChild(QComboBox)
+                                for i in range(1, combo.count()): self.assertFalse(combo.itemIcon(i).isNull())
+                                for i in range(choices.count()): self.assertFalse(choices.item(i).icon().isNull())
                                 button = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.Ok)
                                 self.assertFalse(button.isEnabled())
                                 available = [choices.item(i) for i in range(choices.count()) if choices.item(i).flags() & Qt.ItemIsEnabled]
@@ -47,7 +49,12 @@ class PickerAndShopUI(TestCase):
                                     picked.append(item.data(Qt.UserRole))
                                 item = available[1]
                                 rect = choices.visualItemRect(item)
-                                QTest.mouseClick(choices.viewport(), Qt.LeftButton, pos=QPoint(rect.left() + 8, rect.center().y()))
+                                option = QStyleOptionViewItem()
+                                choices.itemDelegate().initStyleOption(option, choices.indexFromItem(item))
+                                option.rect = rect
+                                indicator = choices.style().subElementRect(QStyle.SE_ItemViewItemCheckIndicator, option, choices)
+                                self.assertFalse(indicator.isEmpty())
+                                QTest.mouseClick(choices.viewport(), Qt.LeftButton, pos=indicator.center())
                                 self.assertEqual(item.checkState(), Qt.Unchecked, 'checkbox area toggles once')
                                 QTest.keyClick(choices, Qt.Key_Space)
                                 self.assertEqual(item.checkState(), Qt.Checked)

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from core.config.repository import lock, ConfigValidationError, RevisionConflictError
 from core.runtime_state import atomic_json
+from core.material_planner import stock_limited
 
 TASK = 'mad.material_sweep'
 MANUAL_PREVIEW_TTL = 30*60
@@ -19,7 +20,16 @@ class MaterialStore:
 
     def definitions(self):
         with lock:
-            return json.loads(self.path.read_text('utf-8')) if self.path.exists() else {'revision':0,'targets':[]}
+            value = json.loads(self.path.read_text('utf-8')) if self.path.exists() else {'revision':0,'targets':[]}
+            version = value.get('schema_version',1)
+            if version not in (1,2): raise ConfigValidationError('素材配置版本较新，请使用对应新版程序。')
+            if version == 1:
+                value['targets'].sort(key=lambda t:-t.get('priority',1))
+                for target in value['targets']:
+                    target['stock_limit_enabled'] = True
+                    target.pop('priority',None)
+            value['schema_version'] = 2
+            return value
 
     def state(self):
         with lock:
@@ -40,24 +50,27 @@ class MaterialStore:
             previous = {t['ref']:t for t in old['targets']}
             result, seen = [], set()
             for draft in targets:
-                ref, amount = draft['ref'], draft['amount']
+                ref, amount = draft['ref'], draft.get('amount')
+                limited = draft.get('stock_limit_enabled', amount is not None)
                 if ref not in data['items'] or ref in seen:
                     raise ConfigValidationError('请选择已适配素材，每种素材只设置一个目标。')
-                if type(amount) is not int or not 1 <= amount <= 2147483647:
+                if (limited or amount is not None) and (type(amount) is not int or not 1 <= amount <= 2147483647):
                     raise ConfigValidationError('目标库存须为正整数。')
                 seen.add(ref)
                 before = previous.get(ref,{})
                 version = before.get('version')
-                if not version or before['amount'] != amount or draft.get('reopen'):
+                if not version or before.get('amount') != amount or draft.get('reopen'):
                     version = uuid4().hex
                 excluded = list(dict.fromkeys(draft.get('excluded',[])))
                 if set(excluded)-set(data['items'][ref]['sources']):
                     raise ConfigValidationError('排除列表包含非来源关卡。')
-                priority = draft.get('priority',1)
-                if priority not in (1,2): raise ConfigValidationError('未知优先级。')
                 result.append(dict(ref=ref, amount=amount, version=version, enabled=bool(draft.get('enabled',True)),
-                                   priority=priority, excluded=excluded))
-            value = {'revision':old['revision']+1,'targets':result}
+                                   stock_limit_enabled=bool(limited), excluded=excluded))
+            value = {'schema_version':2,'revision':old['revision']+1,'targets':result}
+            if self.path.exists():
+                raw = json.loads(self.path.read_text('utf-8'))
+                backup = self.path.with_name('material-goals.v1.backup.json')
+                if raw.get('schema_version',1)==1 and not backup.exists(): atomic_json(backup,raw)
             atomic_json(self.path,value)
             return deepcopy(value)
 
@@ -98,7 +111,7 @@ class MaterialStore:
         with lock:
             state = self.state()
             if context not in state['rounds']:
-                snapshot = {'targets':self.definitions()['targets'],'catalog_version':catalog()['version'],
+                snapshot = {'targets':self.definitions()['targets'],'catalog_version':catalog()['version'],'allocation_version':2,
                             'rules':deepcopy(state['adjustments'].get(scope,{}))}
                 state['rounds'][context] = {'snapshot':snapshot,'used':{},'blocked':[], 'receipts':[]}
                 if scope == 'routine': state['adjustments'].pop(scope,None)
@@ -107,14 +120,51 @@ class MaterialStore:
 
     def remaining(self, snapshot):
         state = self.state()
-        return [t for t in snapshot['targets'] if t['enabled'] and self.token(t) not in state['completed']]
+        return [t for t in snapshot['targets'] if t['enabled'] and
+                (not snapshot.get('inventory_only') or stock_limited(t)) and
+                (not stock_limited(t) or self.token(t) not in state['completed'])]
+
+    def needs_work(self, context, allocation_id=None):
+        """Finite step debt and optional stock goals, never an endless checkbox."""
+        state = self.state(); round_ = state['rounds'].get(context)
+        if not round_: return False
+        snapshot = round_['snapshot']
+        if snapshot.get('allocation_version') != 2: return bool(self.remaining(snapshot))
+        if state['pending'] and state['pending']['phase']=='confirming': return True
+        allocations = round_.get('allocations',{})
+        records = [allocations[allocation_id]] if allocation_id in allocations else ([] if allocation_id else allocations.values())
+        if allocation_id in allocations and allocations[allocation_id]['instance'] in round_['blocked']: return False
+        records = [a for a in records if a['instance'] not in round_['blocked']]
+        if any(a.get('waiting_data') or any(r['count']>0 for r in a['rows']) for a in records): return True
+        return any(stock_limited(t) for t in self.remaining(snapshot))
+
+    def allocation(self, context, key):
+        return deepcopy(self.state()['rounds'][context].get('allocations',{}).get(key))
+
+    def save_allocation(self, context, key, instance, table, inventory_only=False):
+        with lock:
+            state = self.state(); round_ = state['rounds'][context]
+            records = round_.setdefault('allocations',{})
+            record = records.get(key)
+            if record is None:
+                record = records[key] = dict(instance=instance,completed=0,spent=0,by_stage={},
+                    budget=sum(r['cost'] for r in table['rows']),inventory_only=inventory_only)
+            elif not record['budget'] and not record['completed']:
+                record['budget'] = sum(r['cost'] for r in table['rows'])
+            # Failed re-observation must not erase an existing finite quota.
+            if table['rows'] or not table.get('waiting_data') or not record.get('rows'):
+                record['rows'] = deepcopy(table['rows'])
+                record['planned'] = record['completed']+sum(r['count'] for r in record['rows'])
+            record.update(waiting=deepcopy(table['waiting']),waiting_data=table.get('waiting_data',False))
+            atomic_json(self.state_path,state)
+            return deepcopy(record)
 
     def _observe(self, state, observation, snapshot):
         state['observation'] = deepcopy(observation)
         if observation.get('source') != 'game': return
         for target in snapshot['targets']:
             count = observation.get('inventory',{}).get(target['ref'])
-            if target['enabled'] and type(count) is int and count >= target['amount']:
+            if target['enabled'] and stock_limited(target) and type(count) is int and count >= target['amount']:
                 state['completed'].setdefault(self.token(target),{'at':observation['at'],'quantity':count})
 
     def observe(self, observation, snapshot):
@@ -142,12 +192,17 @@ class MaterialStore:
                 observation.get('inventory',{})[ref] = None
         return observation
 
-    def prepare_batch(self, context, instance, stage, count, refs):
+    def prepare_batch(self, context, instance, stage, count, refs, allocation_id=None):
         with lock:
             state = self.state()
             if state['pending']: raise RuntimeError('上批素材扫荡待核对，不能再次确认消费。')
             pending = dict(id=uuid4().hex,context=context,instance=instance,stage=stage,count=count,
                            refs=refs,phase='confirming',at=time.time())
+            if allocation_id is not None:
+                allocation = state['rounds'][context]['allocations'][allocation_id]
+                row = next((r for r in allocation['rows'] if r['stage_id']==stage),None)
+                if count<=0 or not row or count>row['count']: raise RuntimeError('素材消费超出已保存次数安排。')
+                pending['allocation_id'] = allocation_id
             state['pending'] = pending
             atomic_json(self.state_path,state)
             return pending['id']
@@ -168,6 +223,14 @@ class MaterialStore:
                 return False  # the same receipt is never applied twice
             if pending['phase'] != 'result_observed': raise RuntimeError('消费结果未知，不能按库存猜测次数。')
             round_ = state['rounds'][pending['context']]
+            if pending.get('allocation_id'):
+                allocation = round_['allocations'][pending['allocation_id']]
+                row = next(r for r in allocation['rows'] if r['stage_id']==pending['stage'])
+                if not 0 < pending['count'] <= row['count']: raise RuntimeError('实际次数超出素材配额，需核对。')
+                cost = row['cost']//row['count']
+                row['count'] -= pending['count']; row['cost'] -= pending['count']*cost
+                allocation['completed'] += pending['count']; allocation['spent'] += pending['count']*cost
+                allocation['by_stage'][pending['stage']] = allocation['by_stage'].get(pending['stage'],0)+pending['count']
             used = round_['used'].setdefault(pending['instance'],{})
             for ref in pending['refs']: used[ref] = used.get(ref,0)+pending['count']
             round_['receipts'].append(deepcopy(pending))

@@ -2,6 +2,7 @@
 from datetime import date, datetime, timedelta, time as clock_time
 from zoneinfo import ZoneInfo
 import time
+import json
 
 from core.Mad_thread import MadThread
 from core.exception import GameDayChanged
@@ -14,10 +15,9 @@ def material_pending(store):
     return bool(pending and pending['phase']=='confirming')
 
 
-def material_remaining(store, day):
+def material_remaining(store, day, allocation_id=None):
     materials=MaterialStore(store.repository)
-    round_=materials.state()['rounds'].get('plan:'+day)
-    return bool(round_ and materials.remaining(round_['snapshot']))
+    return materials.needs_work('plan:'+day,allocation_id)
 
 
 def start_at(plan, day):
@@ -45,12 +45,26 @@ class PlanPass:
         self.stop_requested = False
         if only_remaining:
             left = repo.load_config()['unfinished_tasks']
-            for item in self.tasks:
+            seen = set()
+            for item in reversed(self.tasks):
+                identity=(item['root'],json.dumps(item['token']))
+                if identity in seen: continue
+                seen.add(identity)
                 remaining=(left.get(item['instance_id']) if item['task_id'] in SWEEP_TASKS else
-                           material_remaining(store,day) if item['task_id']==MATERIAL_TASK else False)
+                           material_remaining(store,day,item.get('material_allocation')) if item['task_id']==MATERIAL_TASK else False)
                 if item['status']=='PARTIAL' and remaining:
                     group = self.groups[item['root']]
                     if item['token'] in group['steps']:
+                        if item['task_id']==MATERIAL_TASK and item.get('material_allocation'):
+                            materials=MaterialStore(store.repository)
+                            allocation=materials.allocation('plan:'+day,item['material_allocation'])
+                            blocked=materials.state()['rounds']['plan:'+day]['blocked']
+                            if allocation and not allocation.get('waiting_data') and not any(r['count'] for r in allocation['rows']) and item['instance_id'] not in blocked:
+                                # Explicit stock-only continuation after a completed
+                                # quota; retries with count debt keep the same identity.
+                                generations=group.setdefault('material_generations',{})
+                                token=json.dumps(item['token'])
+                                generations[token]=generations.get(token,0)+1
                         group['steps'].remove(item['token'])
                         group['scheduled'] = False
         store.update_record(day, status='running', groups=self.groups, error='', inflight=None)
@@ -93,7 +107,7 @@ class PlanPass:
         left = self.repo.load_config()['unfinished_tasks']
         remaining = list(dict.fromkeys(self.deferred + [r['instance_id'] for r in self.tasks
                          if r['status']=='PARTIAL' and ((r['task_id'] in SWEEP_TASKS and left.get(r['instance_id']))
-                         or (r['task_id']==MATERIAL_TASK and material_remaining(self.store,self.day)))]))
+                         or (r['task_id']==MATERIAL_TASK and material_remaining(self.store,self.day,r.get('material_allocation'))))]))
         self.store.update_record(self.day, status='partial' if remaining else 'completed',
                                  remaining=remaining, deferred=self.deferred, inflight=None)
         self.finished = True
@@ -228,8 +242,12 @@ class PlanRunner:
             if op['token'] not in g['steps']: g['steps'].append(op['token'])
         tasks=r.get('tasks',[])
         if done:
-            tasks.append(dict(op,status='PARTIAL' if op['task_id']==MATERIAL_TASK else 'MANUAL',
-                              reason='玩家已核对，跳过此步骤；素材目标仍按共享库存判定。' if op['task_id']==MATERIAL_TASK
+            closed=False
+            if op['task_id']==MATERIAL_TASK:
+                round_=MaterialStore(self.store.repository).state()['rounds'].get('plan:'+day,{})
+                closed=bool(op.get('material_allocation')) and round_.get('snapshot',{}).get('allocation_version')==2 and op['instance_id'] in round_.get('blocked',[])
+            tasks.append(dict(op,status=('SKIPPED' if closed else 'PARTIAL') if op['task_id']==MATERIAL_TASK else 'MANUAL',
+                              reason=('玩家已核对，次数不明，已结束本指令本轮额度。' if closed else '玩家已核对，跳过此步骤；库存目标保留。') if op['task_id']==MATERIAL_TASK
                               else '玩家已核对，跳过此步骤。'))
         self.store.update_record(day,status='stopped',groups=groups,tasks=tasks,inflight=None,error='')
         self.message='核对结果已保存，可继续今日。'

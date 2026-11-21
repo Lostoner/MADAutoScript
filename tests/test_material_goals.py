@@ -273,10 +273,13 @@ class ExecutionTests(TestCase):
     def test_failure_after_result_never_confirms_the_batch_again(self):
         self.run_material(stock=0,balance=0)
         self.balance=10; self.stock=9
+        # The zero-budget step is finished; this is a subsequent invocation.
+        self.worker.material_allocation_id='after-refill'
         observe=self.observer.after_batch.side_effect
         self.observer.after_batch.side_effect=RuntimeError('inventory read interrupted')
         with self.assertRaisesRegex(RuntimeError,'interrupted'): self.continue_material()
-        self.assertEqual(self.store.state()['pending']['phase'],'result_observed')
+        self.assertIsNone(self.store.state()['pending'])
+        self.assertEqual(self.store.state()['rounds']['round']['receipts'][-1]['count'],1)
         self.assertEqual(self.calls,[1])
         self.observer.after_batch.side_effect=observe
         self.continue_material()

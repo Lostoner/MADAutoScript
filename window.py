@@ -137,7 +137,8 @@ class Window(QMainWindow):
     def _show_materials(self, scope, key, action):
         from gui.fragments.materials import MaterialDialog
         editor=self.plan_page.editor if scope.startswith('plan:') else self.routineInterface
-        dialog=MaterialDialog(self.repository,self.theme,key,editor.editors[key].value().get('reserve',0),scope,self)
+        dialog=MaterialDialog(self.repository,self.theme,key,editor.editors[key].value().get('reserve',0),scope,self,
+                              instance_name=editor._event(key)['event_name'])
         self.material_dialog=dialog
         dialog.syncRequested.connect(self._sync_materials)
         dialog.stopRequested.connect(self._request_stop)
@@ -350,14 +351,14 @@ class Window(QMainWindow):
     def _display_tasks(self, event):
         tasks = [dict(item) for item in event.get('result', {}).get('tasks', [])]
         # A later material instruction can satisfy an earlier instruction's goals.
-        # Reflect the existing final inventory meaning without altering receipts.
+        # Clear resolved stock conditions, never another step's count debt.
         from core.material_store import MaterialStore
         store = MaterialStore(self.repository)
         for item in tasks:
             if item.get('task_id') == 'mad.material_sweep' and item.get('status') == 'PARTIAL' and item.get('material_context'):
                 round_ = store.state()['rounds'].get(item['material_context'])
-                if round_ and not store.remaining(round_['snapshot']):
-                    item.update(status='SUCCESS', reason='共享素材目标已达成。')
+                if round_ and not store.needs_work(item['material_context'],item.get('material_allocation')):
+                    item.update(status='SUCCESS', reason='本次安排和库存条件已完成。')
         return tasks
 
     def _request_stop(self):
@@ -390,7 +391,7 @@ class Window(QMainWindow):
                 self.material_dialog.refreshed()
                 error=(event['result'].get('error') or '').strip()
                 self.material_dialog.feedback.setText(error.splitlines()[-1] if error else
-                    '同步完成，已刷新库存和目标表。' if event.get('material_sync') and event['state']=='succeeded' else event.get('message','任务已结束。'))
+                    '同步结束，已更新可扫状态和扫荡安排。' if event.get('material_sync') and event['state']=='succeeded' else event.get('message','任务已结束。'))
             unfinished = {} if is_plan else self.repository.load_config()['unfinished_tasks']
             handled = {item.get('instance_id',item['task_id']) for item in event['result'].get('tasks', [])}
             remaining = sum(len(unfinished.get(task, [])) for task in handled)

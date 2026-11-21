@@ -8,8 +8,8 @@ from typing import Union
 
 from PyQt5.QtCore import QEvent, Qt, pyqtSignal, QMimeData
 from PyQt5.QtGui import QIcon, QDrag
-from PyQt5.QtWidgets import QLabel, QFrame, QHBoxLayout, QVBoxLayout, QToolButton, QMenu, QAction, QApplication, QSizePolicy, QListWidget
-from qfluentwidgets import ExpandSettingCard, FluentIcon as FIF, LineEdit, CheckBox
+from PyQt5.QtWidgets import QLabel, QFrame, QHBoxLayout, QVBoxLayout, QToolButton, QMenu, QAction, QApplication, QSizePolicy
+from qfluentwidgets import ExpandSettingCard, FluentIcon as FIF, LineEdit, CheckBox, ListWidget
 from gui.theme import typography
 
 
@@ -81,7 +81,7 @@ class ElidedLabel(QLabel):
         super().resizeEvent(event)
 
 
-class CheckableListWidget(QListWidget):
+class CheckableListWidget(ListWidget):
     """The whole row toggles once, including clicks on its check indicator."""
     def _checkable(self, item):
         return item is not None and item.flags() & Qt.ItemIsEnabled and item.flags() & Qt.ItemIsUserCheckable

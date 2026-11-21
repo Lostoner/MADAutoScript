@@ -1,4 +1,4 @@
-"""Small deterministic greedy planner. Estimates never mutate observed inventory."""
+"""Pure material planning: weighted counts, plus frozen v1 inventory plans."""
 from functools import lru_cache
 import json
 import math
@@ -17,7 +17,146 @@ def yield_estimate(rows):
     return sum(r['amount'][0]*r['chance'] for r in rows)
 
 
+def stock_limited(target):
+    # Missing flag is an existing, explicit inventory goal, never unlimited.
+    return target.get('stock_limit_enabled', True)
+
+
+def active_targets(snapshot, observation, completed, rules, used):
+    enabled = [t for t in snapshot['targets'] if t['enabled']]
+    targets, waiting = {}, {}
+    for rank, target in enumerate(enabled, 1):
+        if snapshot.get('inventory_only') and not stock_limited(target): continue
+        ref = target['ref']
+        if stock_limited(target):
+            if ref+'@'+target['version'] in completed: continue
+            count = observation.get('inventory', {}).get(ref)
+            if type(count) is not int:
+                waiting[ref] = '库存待同步'; continue
+            if count >= target['amount']: continue
+        cap = rules.get(ref, {}).get('max_runs')
+        if cap is not None and used.get(ref, 0) >= cap:
+            waiting[ref] = '本轮手动次数上限已用完'; continue
+        targets[ref] = dict(target, weight=len(enabled)-rank+1, rank=rank)
+    return targets, waiting
+
+
+def source_refs(stage_id, targets, rules, data):
+    drops = data['stages'][stage_id]['drops']
+    return [ref for ref, target in targets.items() if ref in drops
+            and any(row.get('chance') != 0 for row in drops[ref])
+            and stage_id not in target.get('excluded', [])
+            and (not rules.get(ref, {}).get('stage') or rules[ref]['stage'] == stage_id)]
+
+
+def stage_order(stage):
+    return tuple(map(int, stage.split(':')[1].split('-')))
+
+
+def _shares(budget, rows, data):
+    # Proportional sweep counts, not proportional stamina. Current NORMAL costs
+    # are equal; the cost term also keeps integer rounding within the budget.
+    costs = {data['stages'][row['stage_id']]['cost'] for row in rows}
+    usable = (budget//next(iter(costs)))*next(iter(costs)) if len(costs)==1 else budget
+    scale = usable / sum(row['weight']*data['stages'][row['stage_id']]['cost'] for row in rows)
+    quotas = [scale*row['weight'] for row in rows]
+    counts = [math.floor(q) for q in quotas]
+    left = budget-sum(n*data['stages'][r['stage_id']]['cost'] for n,r in zip(counts,rows))
+    order = sorted(range(len(rows)),key=lambda i:(-(quotas[i]-counts[i]),-rows[i]['weight'],stage_order(rows[i]['stage_id'])))
+    while True:
+        added = False
+        for i in order:
+            cost = data['stages'][rows[i]['stage_id']]['cost']
+            if cost <= left:
+                counts[i] += 1; left -= cost; added = True
+        if not added: return counts
+
+
+def weighted_plan(snapshot, observation, completed, rules=None, used=None, reserve=0, data=None):
+    data = data or catalog()
+    rules, planned = rules or {}, dict(used or {})
+    targets, waiting = active_targets(snapshot,observation,completed,rules,planned)
+    balance = observation.get('balance')
+    budget = max(0,balance-reserve) if type(balance) is int else 0
+    result = {'rows':[], 'waiting':waiting, 'budget':budget, 'waiting_data':False}
+    if snapshot.get('catalog_version') != data['version']:
+        result['waiting'].update({ref:'目录版本已变化，请结束旧轮次后重新开始' for ref in targets})
+        result['waiting_data'] = bool(targets or waiting)
+        return result
+    if type(balance) is not int:
+        states = observation.get('stages',{})
+        for ref,target in targets.items():
+            allowed = [s for s in data['items'][ref]['sources'] if s not in target.get('excluded',[])
+                       and (not rules.get(ref,{}).get('stage') or rules[ref]['stage']==s)]
+            unavailable = all(states.get(s,{}).get('status')=='unavailable' for s in allowed)
+            waiting[ref] = '没有已确认可扫的来源' if unavailable else '体力或可扫关卡待同步'
+            result['waiting_data'] |= not unavailable
+        result['waiting_data'] |= any(reason=='库存待同步' for reason in waiting.values())
+        return result
+    available = {s for s,v in observation.get('stages',{}).items() if v.get('status')=='sweepable' and s in data['stages']}
+    output = {}
+    while targets:
+        candidates = {s:source_refs(s,targets,rules,data) for s in available if data['stages'][s]['cost']<=budget}
+        selected, covered = [], set()
+        for ref in targets:
+            if ref in covered: continue
+            options = [s for s,refs in candidates.items() if ref in refs]
+            if not options: continue
+            source = min(options,key=lambda s:(s not in selected,
+                -sum(targets[r]['weight'] for r in candidates[s] if r not in covered),
+                data['stages'][s]['cost'],stage_order(s)))
+            if source not in selected: selected.append(source)
+            covered.update(candidates[source])
+        rows = [dict(stage_id=s,refs=candidates[s],weight=max(targets[r]['weight'] for r in candidates[s]),
+                     priority=min(targets[r]['rank'] for r in candidates[s])) for s in selected]
+        rows.sort(key=lambda r:(-r['weight'],stage_order(r['stage_id'])))
+        if not rows: break
+        changed = False
+        for row, count in zip(rows,_shares(budget,rows,data)):
+            refs, stage_id = row['refs'], row['stage_id']
+            limits = [rules[r]['max_runs']-planned.get(r,0) for r in refs if rules.get(r,{}).get('max_runs') is not None]
+            if limits: count = min(count,max(0,min(limits)))
+            if count<=0: continue
+            cost = data['stages'][stage_id]['cost']
+            saved = output.setdefault(stage_id,dict(row,count=0,cost=0,estimated={},
+                manual=any(r in rules for r in refs),reason='按同关最高优先级分配次数'))
+            saved['count'] += count; saved['cost'] += count*cost
+            saved['refs'] = list(dict.fromkeys(saved['refs']+refs))
+            budget -= count*cost
+            for ref in refs: planned[ref] = planned.get(ref,0)+count
+            changed = True
+        if not changed: break
+        targets, next_waiting = active_targets(snapshot,observation,completed,rules,planned)
+        for ref in next_waiting:
+            if rules.get(ref,{}).get('max_runs') is not None and (used or {}).get(ref,0)<rules[ref]['max_runs']:
+                next_waiting[ref] = '本次安排受本轮手动次数上限限制'
+        waiting.update(next_waiting)
+    original, initial_waiting = active_targets(snapshot,observation,completed,rules,used or {})
+    waiting.update(initial_waiting)
+    for ref,target in original.items():
+        allowed = [s for s in data['items'][ref]['sources'] if s not in target.get('excluded',[])
+                   and (not rules.get(ref,{}).get('stage') or rules[ref]['stage']==s)]
+        if not any(s in available for s in allowed):
+            waiting[ref] = '没有已确认可扫的来源'
+            if any(s not in observation.get('stages',{}) for s in allowed): result['waiting_data'] = True
+        elif not any(ref in row['refs'] for row in output.values()) and ref not in waiting:
+            waiting[ref] = '本次体力不足以分配次数' if not output else '本次按优先级未分配次数'
+    result['waiting_data'] |= any(reason=='库存待同步' for reason in waiting.values())
+    result['rows'] = list(output.values())
+    for row in result['rows']:
+        limited = any(stock_limited(t) and t['enabled'] and t['ref'] in data['stages'][row['stage_id']]['drops']
+                      and t['ref']+'@'+t['version'] not in completed for t in snapshot['targets'])
+        row['batch_count'] = 1 if limited else min(5,row['count'])
+    return result
+
+
 def plan(snapshot, observation, completed, rules=None, used=None, reserve=0, data=None):
+    if snapshot.get('allocation_version') == 2:
+        return weighted_plan(snapshot,observation,completed,rules,used,reserve,data)
+    return inventory_plan(snapshot,observation,completed,rules,used,reserve,data)
+
+
+def inventory_plan(snapshot, observation, completed, rules=None, used=None, reserve=0, data=None):
     data = data or catalog()
     rules, used = rules or {}, used or {}
     inventory = observation.get('inventory',{})
