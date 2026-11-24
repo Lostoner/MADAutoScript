@@ -203,7 +203,7 @@ class PlanFragment(QWidget):
         self.from_daily.setVisible(not locked); self.use_template.setVisible(not locked and bool(self.draft['templates']))
         if tasks:
             if self.editor is None:
-                self.editor=RoutineFragment(None,self.theme,self.stack,definition=day['routine'])
+                self.editor=RoutineFragment(self.store.repository,self.theme,self.stack,definition=day['routine'])
                 self.stack.addWidget(self.editor); self.editor.dirtyChanged.connect(self._edit_cards)
                 self.editor.materialRequested.connect(lambda key,action:self.materialRequested.emit(self.day,key,action))
             else: self.editor.load_definition(day['routine'])
@@ -300,6 +300,7 @@ class PlanFragment(QWidget):
 
     def _new_day(self):
         rows=default_events(); params=default_routine()
+        params['material_sweep']['targets']=[]
         for e in rows: e['enabled']=False
         self._set_tasks(self.day,'一日任务',dict(events=rows,params_by_id={
             e['instance_id']:params.get(e['func_name'][4:],{}) for e in rows}))
@@ -331,13 +332,14 @@ class PlanFragment(QWidget):
         name=name.strip()
         if ok and name:
             if name in self.draft['templates'] and QMessageBox.question(self,'更新模板',f'替换模板「{name}」？已安排的日期保持不变。')!=QMessageBox.Yes: return
-            self.draft['templates'][name]=deepcopy(day['routine']); self._render(); self.set_feedback('模板已加入草稿。')
+            self.draft['templates'][name]=self.store.copy_routine(day['routine'],self.day)
+            self._render(); self.set_feedback('模板已加入草稿。')
 
     def _use_template(self):
         names=sorted(self.draft['templates'])
         if not names: return
         name,ok=QInputDialog.getItem(self,'使用模板','复制到 '+self.day,names,0,False)
-        if ok: self._set_tasks(self.day,name,self.draft['templates'][name]); self._render()
+        if ok: self._set_tasks(self.day,name,self.store.copy_routine(self.draft['templates'][name])); self._render()
 
     def _delete_template(self):
         name,ok=QInputDialog.getItem(self,'删除模板','选择模板（已安排日期不受影响）',sorted(self.draft['templates']),0,False)
@@ -365,7 +367,9 @@ class PlanFragment(QWidget):
             if key==source or self._locked(key): continue
             oldtime=self.draft['days'].get(key,{}).get('time','')
             copy=deepcopy(day)
-            if not whole_day and copy['kind']=='tasks': copy['time']=oldtime
+            if copy['kind']=='tasks':
+                copy['routine']=self.store.copy_routine(day['routine'],source)
+                if not whole_day: copy['time']=oldtime
             self.draft['days'][key]=copy
 
     def _copy_dialog(self):

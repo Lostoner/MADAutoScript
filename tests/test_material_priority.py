@@ -7,15 +7,17 @@ from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from core.config.repository import ProfileRepository
+from core.config.repository import ProfileRepository, instance_params
 from core.material_planner import plan
-from core.material_store import MaterialStore
+from core.material_store import MaterialStore, TASK, copy_targets
 from core.runtime_state import atomic_json
 from module.material_sweep import execute, Observer
 from module import sweep_utils as sweep
 
 A,B,C,D='item:80201','item:80205','item:80202','goods:1'
 S,T,U='normal:4-1','normal:5-1','normal:6-1'
+FREYA,SETA='item:29','item:34'
+H1,H2,H3,H4='hard:1-1','hard:8-1','hard:15-2','hard:1-2'
 
 
 def target(ref, **values):
@@ -115,6 +117,36 @@ class WeightedPlannerTests(TestCase):
             obs['balance']=balance
             self.assertEqual([r['count'] for r in plan(snapshot,obs,{},data=data)['rows']],[2,2,1,1,1])
 
+    def test_memory_uses_all_eligible_sources_under_one_weight_and_redistributes_capacity(self):
+        from core.material_planner import catalog
+        data=catalog()
+        snapshot={'allocation_version':2,'catalog_version':data['version'],
+                  'targets':[target(FREYA),target(SETA),target(A)]}
+        states={H1:dict(status='sweepable',remaining_attempts=1),
+                H2:dict(status='sweepable',remaining_attempts=3),
+                H3:dict(status='unavailable'),H4:dict(status='sweepable',remaining_attempts=3),
+                S:dict(status='sweepable')}
+        obs={'balance':130,'stages':states}
+        def counts(rules=None):
+            return [(r['stage_id'],r['count'],r['cost']) for r in plan(snapshot,obs,{},rules,reserve=20)['rows']]
+        self.assertEqual(counts(),[(H1,1,20),(H2,2,40),(H4,2,40),(S,1,10)])
+        states[H2]['remaining_attempts']=0
+        self.assertEqual(counts(),[(H1,1,20),(H4,3,60),(S,3,30)])
+        states[H2]['remaining_attempts']=3
+        self.assertEqual(counts({FREYA:{'stage':H2,'max_runs':1}}),
+                         [(H2,1,20),(H4,3,60),(S,3,30)])
+
+    def test_memory_preview_does_not_guess_unknown_or_exhausted_hard_limit(self):
+        from core.material_planner import catalog
+        snapshot={'allocation_version':2,'catalog_version':catalog()['version'],'targets':[target(FREYA)]}
+        obs={'balance':200,'stages':{H1:{'status':'sweepable'},H2:{'status':'unavailable','remaining_attempts':0},
+                                    H3:{'status':'unavailable'}}}
+        result=plan(snapshot,obs,{})
+        self.assertEqual(result['rows'],[]); self.assertTrue(result['waiting_data'])
+        self.assertIn('待确认',result['waiting'][FREYA])
+        obs['stages'][H1]['remaining_attempts']=8
+        self.assertEqual([(r['stage_id'],r['count']) for r in plan(snapshot,obs,{})['rows']],[(H1,3)])
+
 
 class PriorityStorageTests(TestCase):
     def setUp(self):
@@ -126,6 +158,13 @@ class PriorityStorageTests(TestCase):
         old={'revision':7,'targets':[dict(target(A),amount=20,priority=1),dict(target(B),amount=30,priority=2)]}
         for t in old['targets']: t.pop('stock_limit_enabled')
         atomic_json(self.store.path,old)
+        # Pre-upgrade copies, like the base card, had no per-card targets field.
+        events=self.repo.load_events()
+        base=next(e for e in events if e['instance_id']==TASK)
+        events.append(dict(base,instance_id='tail',event_name='尾扫'))
+        config=self.repo.load_config()
+        config['instance_params']['tail']={'reserve':20}
+        atomic_json(self.repo.config_path,config); atomic_json(self.repo.event_path,events)
         frozen={'targets':deepcopy(old['targets']),'catalog_version':'old','rules':{}}
         state=self.store.state(); state['completed'][A+'@v1']={'at':1,'quantity':20}
         state['rounds']['old']={'snapshot':frozen,'used':{},'blocked':[],'receipts':[]}
@@ -134,32 +173,44 @@ class PriorityStorageTests(TestCase):
         self.assertEqual([t['ref'] for t in definitions['targets']],[B,A])
         self.assertTrue(all(t['stock_limit_enabled'] for t in definitions['targets']))
         self.assertEqual(json.loads(self.store.path.read_text('utf-8')),old)
-        self.store.save_targets(definitions['targets'],7)
-        self.assertEqual(json.loads(self.store.path.with_name('material-goals.v1.backup.json').read_text('utf-8')),old)
+        migrated=self.store.freeze('upgrade')
+        front,tail=(self.store.for_step(migrated,key) for key in (TASK,'tail'))
+        self.assertEqual([t['ref'] for t in self.store.remaining(front)],[B])
+        self.assertEqual([t['ref'] for t in self.store.remaining(tail)],[B])
+        self.assertNotEqual(front['targets'][0]['version'],tail['targets'][0]['version'])
+        self.assertTrue(self.store.needs_work('upgrade',instance='tail'))
+        self.store.save_targets(definitions['targets'],expected=definitions['targets'])
+        self.assertEqual(json.loads(self.store.path.read_text('utf-8')),old)
         self.assertEqual(self.store.freeze('old'),frozen)
         self.assertEqual(self.store.state()['completed'],state['completed'])
         self.assertEqual(self.store.definitions()['targets'],definitions['targets'])
-        self.store.save_targets(self.store.definitions()['targets'])
-        self.assertEqual(json.loads(self.store.path.with_name('material-goals.v1.backup.json').read_text('utf-8')),old)
+        self.store.observe({'inventory':{B:30},'source':'game','at':2},front)
+        self.assertFalse(self.store.needs_work('upgrade',instance=TASK))
+        self.assertTrue(self.store.needs_work('upgrade',instance='tail'))
+        self.store.save_targets([],expected=definitions['targets'])
+        self.assertEqual(self.store.definitions('tail')['targets'],tail['targets'])
+        self.assertEqual(instance_params(self.repo.load_config(),base)['targets'],[])
+        self.assertEqual(self.store.freeze('upgrade'),migrated)
+        self.assertEqual(json.loads(self.store.path.read_text('utf-8')),old)
 
     def test_new_selection_needs_no_quantity_and_old_completion_cannot_stop_it(self):
-        self.store.save_targets([{'ref':A,'amount':20}]); first=self.store.freeze('stock')
+        self.store.save_targets([{'ref':A,'amount':20}]); first=self.store.for_step(self.store.freeze('stock'),TASK)
         self.store.observe({'inventory':{A:20},'source':'game','at':1},first)
         draft=self.store.definitions()['targets']; draft[0]['stock_limit_enabled']=False
         self.store.save_targets(draft)
-        snapshot=self.store.freeze('weighted')
+        snapshot=self.store.for_step(self.store.freeze('weighted'),TASK)
         self.assertEqual(len(self.store.remaining(snapshot)),1)
         self.assertFalse(self.store.needs_work('weighted'))
         draft[0]['stock_limit_enabled']=True; self.store.save_targets(draft)
-        self.assertFalse(self.store.remaining(self.store.freeze('stock-again')))
+        self.assertFalse(self.store.remaining(self.store.for_step(self.store.freeze('stock-again'),TASK)))
 
     def test_quota_receipt_is_atomic_idempotent_and_not_a_goal_completion(self):
         self.store.save_targets([target(A)])
-        snapshot=self.store.freeze('round')
+        snapshot=self.store.for_step(self.store.freeze('round'),TASK)
         obs={'inventory':{},'balance':100,'source':'game','at':1,'stages':{S:{'status':'sweepable'}}}
         table=plan(snapshot,obs,{})
-        self.store.save_allocation('round','step','front',table)
-        batch=self.store.prepare_batch('round','front',S,5,[A],'step')
+        self.store.save_allocation('round','step',TASK,table)
+        batch=self.store.prepare_batch('round',TASK,S,5,[A],'step')
         self.store.result_seen(batch,5)
         self.assertTrue(self.store.settle(batch,obs)); self.assertFalse(self.store.settle(batch,obs))
         record=self.store.allocation('round','step')
@@ -176,9 +227,10 @@ class PriorityExecutionTests(TestCase):
         if limited: self.snapshot['targets'][0].update(stock_limit_enabled=True,amount=1)
         self.patches=[patch('core.material_planner.catalog',return_value=self.data),patch('module.material_sweep.catalog',return_value=self.data)]
         for p in self.patches: p.start(); self.addCleanup(p.stop)
-        self.store.save_targets(self.snapshot['targets'])
+        front=copy_targets(self.snapshot['targets']); tail=copy_targets([target(B)])
         if rules: self.store.set_adjustments('routine','front',rules)
-        self.snapshot=self.store.freeze('round')
+        frozen=self.store.freeze('round',params_by_id={'front':{'targets':front},'tail':{'targets':tail}})
+        self.snapshot=self.store.for_step(frozen,'front')
         self.worker=SimpleNamespace(current_instance_id='front',material_allocation_id='front-step',material_inventory_only=False,
             task_params={'material_sweep':{'reserve':0}},guard=Mock(),plan_pass=None,note=Mock(),click=Mock(),to_main_page=Mock())
         self.balance=100; self.stock=0; self.calls=[]
@@ -214,6 +266,7 @@ class PriorityExecutionTests(TestCase):
         self.run_step(); self.assertEqual(sum(self.calls),10)
         self.worker.current_instance_id='tail'; self.worker.material_allocation_id='tail-step'
         self.run_step(); self.assertEqual(sum(self.calls),16)
+        self.assertEqual(self.store.allocation('round','tail-step')['by_stage'],{T:6})
 
     def test_result_is_settled_before_post_batch_failure_and_never_replayed(self):
         self.run_setup()
@@ -259,7 +312,8 @@ class PriorityExecutionTests(TestCase):
 
     def test_existing_frozen_inventory_round_still_uses_legacy_executor(self):
         self.run_setup(limited=True)
-        state=self.store.state(); frozen=state['rounds']['round']['snapshot']
+        state=self.store.state()
+        frozen=state['rounds']['round']['snapshot']=deepcopy(self.snapshot)
         frozen.pop('allocation_version')
         for t in frozen['targets']: t['priority']=1
         atomic_json(self.store.state_path,state)

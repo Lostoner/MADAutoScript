@@ -1442,6 +1442,359 @@
       "tier": 1,
       "slot": "内裤",
       "icon": "src/images/materials/item-90112.webp"
+    },
+    "item:1": {
+      "name": "露西亚的记忆",
+      "sources": [
+        "hard:6-4",
+        "hard:14-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-1.webp"
+    },
+    "item:2": {
+      "name": "莱拉的记忆",
+      "sources": [
+        "hard:2-1",
+        "hard:10-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-2.webp"
+    },
+    "item:5": {
+      "name": "克莱尔的记忆",
+      "sources": [
+        "hard:3-2",
+        "hard:13-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-5.webp"
+    },
+    "item:6": {
+      "name": "艾琳的记忆",
+      "sources": [
+        "hard:7-1",
+        "hard:14-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-6.webp"
+    },
+    "item:7": {
+      "name": "马内的记忆",
+      "sources": [
+        "hard:3-3",
+        "hard:13-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-7.webp"
+    },
+    "item:12": {
+      "name": "玛莎的记忆",
+      "sources": [
+        "hard:3-4",
+        "hard:11-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-12.webp"
+    },
+    "item:13": {
+      "name": "罗曼斯爵士的记忆",
+      "sources": [
+        "hard:2-2",
+        "hard:13-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-13.webp"
+    },
+    "item:16": {
+      "name": "蕾安娜的记忆",
+      "sources": [
+        "hard:2-3",
+        "hard:12-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-16.webp"
+    },
+    "item:17": {
+      "name": "零的记忆",
+      "sources": [
+        "hard:6-3",
+        "hard:11-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-17.webp",
+      "aliases": [
+        "雫的记忆"
+      ]
+    },
+    "item:20": {
+      "name": "丹茜的记忆",
+      "sources": [
+        "hard:4-3",
+        "hard:8-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-20.webp"
+    },
+    "item:21": {
+      "name": "红蝶的记忆",
+      "sources": [
+        "hard:3-1",
+        "hard:10-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-21.webp"
+    },
+    "item:23": {
+      "name": "罗娜的记忆",
+      "sources": [
+        "hard:6-2",
+        "hard:15-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-23.webp"
+    },
+    "item:25": {
+      "name": "影的记忆",
+      "sources": [
+        "hard:12-4",
+        "hard:14-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-25.webp"
+    },
+    "item:26": {
+      "name": "索菲亚的记忆",
+      "sources": [
+        "hard:2-4",
+        "hard:13-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-26.webp"
+    },
+    "item:27": {
+      "name": "艾米丽的记忆",
+      "sources": [
+        "hard:5-3",
+        "hard:14-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-27.webp"
+    },
+    "item:29": {
+      "name": "芙蕾雅的记忆",
+      "sources": [
+        "hard:1-1",
+        "hard:8-1",
+        "hard:15-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-29.webp"
+    },
+    "item:30": {
+      "name": "塞雯的记忆",
+      "sources": [
+        "hard:8-2",
+        "hard:12-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-30.webp"
+    },
+    "item:31": {
+      "name": "日向的记忆",
+      "sources": [
+        "hard:8-3",
+        "hard:12-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-31.webp"
+    },
+    "item:34": {
+      "name": "塞塔的记忆",
+      "sources": [
+        "hard:1-2",
+        "hard:9-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-34.webp"
+    },
+    "item:36": {
+      "name": "露米娜的记忆",
+      "sources": [
+        "hard:1-3",
+        "hard:7-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-36.webp"
+    },
+    "item:37": {
+      "name": "卡莎的记忆",
+      "sources": [
+        "hard:5-1",
+        "hard:9-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-37.webp"
+    },
+    "item:39": {
+      "name": "卡伦的记忆",
+      "sources": [
+        "hard:4-2",
+        "hard:10-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-39.webp"
+    },
+    "item:46": {
+      "name": "珍妮的记忆",
+      "sources": [
+        "hard:5-2",
+        "hard:10-4"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-46.webp"
+    },
+    "item:50": {
+      "name": "米欧的记忆",
+      "sources": [
+        "hard:5-4",
+        "hard:9-3",
+        "hard:15-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-50.webp"
+    },
+    "item:53": {
+      "name": "珍的记忆",
+      "sources": [
+        "hard:1-4",
+        "hard:11-2"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-53.webp"
+    },
+    "item:54": {
+      "name": "荷莉的记忆",
+      "sources": [
+        "hard:6-1",
+        "hard:11-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-54.webp"
+    },
+    "item:56": {
+      "name": "爱莲的记忆",
+      "sources": [
+        "hard:4-4",
+        "hard:7-3"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-56.webp"
+    },
+    "item:62": {
+      "name": "特丽丝的记忆",
+      "sources": [
+        "hard:4-1",
+        "hard:9-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-62.webp"
+    },
+    "item:63": {
+      "name": "莎拉的记忆",
+      "sources": [
+        "hard:7-2",
+        "hard:15-1"
+      ],
+      "verification": "live_crosschecked",
+      "category": "memory",
+      "tier": null,
+      "slot": "",
+      "icon": "src/images/materials/item-63.webp"
     }
   },
   "stages": {
@@ -9972,6 +10325,906 @@
               1
             ],
             "chance": 0.6,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:1-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:29": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:1-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:34": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:1-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:36": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:1-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:53": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:2-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:2": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:2-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:13": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:2-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:16": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:2-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:26": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:3-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:21": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:3-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:5": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:3-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:7": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:3-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:12": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:4-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:62": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:4-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:39": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:4-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:20": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:4-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:56": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:5-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:37": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:5-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:46": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:5-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:27": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:5-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:50": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:6-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:54": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:6-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:23": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:6-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:17": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:6-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:1": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:7-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:6": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:7-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:63": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:7-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:56": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:7-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:36": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:8-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:29": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:8-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:30": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:8-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:31": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:8-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:20": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:9-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:62": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:9-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:34": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:9-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:50": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:9-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:37": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:10-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:2": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:10-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:39": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:10-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:21": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:10-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:46": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:11-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:12": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:11-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:53": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:11-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:54": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:11-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:17": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:12-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:30": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:12-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:16": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:12-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:31": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:12-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:25": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:13-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:5": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:13-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:26": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:13-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:13": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:13-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:7": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:14-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:25": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:14-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:1": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:14-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:6": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:14-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:27": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:15-1": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:63": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:15-2": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:29": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:15-3": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:50": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
+            "basis": "public_table"
+          }
+        ]
+      }
+    },
+    "hard:15-4": {
+      "cost": 20,
+      "resource": "stamina",
+      "drops": {
+        "item:23": [
+          {
+            "amount": [
+              1
+            ],
+            "chance": 0.266666,
             "basis": "public_table"
           }
         ]

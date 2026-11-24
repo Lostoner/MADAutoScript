@@ -58,6 +58,9 @@ class OcrInternalError(Exception):
 class GameDayChanged(Exception):
     """The date-change dialog ended the current task's old-day context."""
 
+class SweepResultUncertain(RuntimeError):
+    """A sweep may have been spent but cannot safely be replayed."""
+
 
 class LogTraceback:
     def __init__(self, title=None, message=None, context=None):

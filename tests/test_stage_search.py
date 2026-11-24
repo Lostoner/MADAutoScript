@@ -4,7 +4,8 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from core.image import swipe_search_target_str
-from module import normal_sweep
+from core.exception import FunctionCallTimeout
+from module import normal_sweep, hard_sweep, sweep_utils
 
 
 class StageSearch(TestCase):
@@ -67,6 +68,43 @@ class StageSearch(TestCase):
                 self.assertEqual(kwargs['img_reactions']['normal_stage'], (103, 534))
                 context.zones[context.difficulty] = context.target_zone
             return img_ends
-        with patch.object(normal_sweep, 'co_detect', side_effect=detect):
-            normal_sweep.navigate(worker, {'zone': 5})
+        with patch.object(sweep_utils, 'co_detect', side_effect=detect):
+            self.assertIsNone(normal_sweep.navigate(worker, {'zone': 5}))
         self.assertEqual((worker.difficulty, worker.zones['NORMAL']), ('NORMAL', 5))
+
+    def test_hard_switch_uses_its_remembered_zone_and_distinguishes_lock_from_unreadable(self):
+        w=Mock(); w.line.side_effect=lambda *args: 'ZONE5' if w.hard else 'ZONE1'
+        w.hard=False
+        def detect(worker,*,img_ends,**kw):
+            if img_ends=='hard_difficulty':
+                self.assertEqual(kw['img_reactions'],{'normal_stage':(185,187)})
+                worker.hard=True
+            if isinstance(img_ends,list):
+                self.assertEqual(worker.target_zone,4)
+                if outcome=='unreadable': raise FunctionCallTimeout()
+                return outcome
+            return img_ends
+        option={'zone':4,'title':'HARD 4-1'}
+        with patch.object(sweep_utils,'co_detect',side_effect=detect):
+            for outcome in ('normal_zone','zone_locked_notice','unreadable'):
+                w.hard=False; w.click.reset_mock()
+                if outcome=='unreadable':
+                    with self.assertRaisesRegex(RuntimeError,'无法确认 HARD 区域'): hard_sweep.navigate(w,option)
+                else:
+                    self.assertIs(hard_sweep.navigate(w,option),outcome=='normal_zone')
+                self.assertEqual(w.click.call_args_list[0].args,(103,534))
+                self.assertEqual(w.click.call_count,2 if outcome=='zone_locked_notice' else 1)
+
+    def test_hard_never_selects_normal_with_same_number_or_guesses_missing_allowance(self):
+        w=Mock(sweep_page='normal_stage')
+        w.ocr.text_list.return_value=[{'text':'NORMAL 5 - 1','point':(380,115)}]
+        with self.assertRaisesRegex(RuntimeError,'未找到 HARD 5-1'):
+            sweep_utils.select_stage(w,'mad.hard_sweep','hard:5-1')
+        w.click.assert_not_called()
+        w.scan.return_value=[{'text':'3/3','point':(451,197)}]  # belongs to row 2
+        w.line.return_value='?'
+        with self.assertRaisesRegex(RuntimeError,'剩余进入次数'): sweep_utils.hard_row_limit(w,115)
+        for text, expected in [('0 / 3',0),('2 / 3',2),('4 / 4',3),('1 / 4',0)]:
+            with self.subTest(text=text):
+                w.scan.return_value[1:]=[{'text':text,'point':(451,136)}]
+                self.assertEqual(sweep_utils.hard_row_limit(w,115),expected)

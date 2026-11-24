@@ -18,7 +18,7 @@ from core.routine_checkpoint import RoutineCheckpoint
 from core.config.config_set import ConfigSet
 from core.scheduler import Scheduler, daily_reset_timestamp
 from core.tasks import TASKS, function_table
-from core.exception import FunctionCallTimeout, PackageIncorrect, RequestHumanTakeOver, GameDayChanged
+from core.exception import FunctionCallTimeout, PackageIncorrect, RequestHumanTakeOver, GameDayChanged, SweepResultUncertain
 from core.device.runtime import RunControl
 from core.device.connection import Connection
 from core.device.Control import Control
@@ -33,7 +33,7 @@ class _Events(logging.Handler):
     def emit(self,record): self.worker.emit('log',record.getMessage(),level=record.levelname)
 
 class MadThread:
-    def __init__(self,repository,emit_event=None,resources=None,plan_pass=None,material_sync=False):
+    def __init__(self,repository,emit_event=None,resources=None,plan_pass=None,material_sync=False,*,material_snapshot=None):
         self.repository=repository if isinstance(repository,ProfileRepository) else ProfileRepository(repository)
         self.config_set=ConfigSet(self.repository)
         self.config=self.repository.load_config()
@@ -42,6 +42,7 @@ class MadThread:
         self.plan_pass=plan_pass
         self.material_repository=plan_pass.store.repository if plan_pass else self.repository
         self.material_sync=material_sync
+        self.material_snapshot=material_snapshot
         self.material_context=None
         self.plan_date=plan_pass.day if plan_pass else None
         self._stop_event=threading.Event()
@@ -141,7 +142,8 @@ class MadThread:
                 return
             def prepare_pass():
                 selection=set(task_ids) if task_ids else None
-                epoch=self.repository.load_config()['last_refresh_config_time']
+                config=self.repository.load_config()
+                epoch=config['last_refresh_config_time']
                 cursor=self.plan_pass or RoutineCheckpoint(self.repository.data_root/'state'/self.repository.profile_id,
                                                            continuous,selection,epoch)
                 if any(e['func_name']=='mad.material_sweep' for e in self.scheduler.instances.values()):
@@ -152,8 +154,10 @@ class MadThread:
                         if not cursor.material_context: cursor.material_context='routine:'+uuid.uuid4().hex
                         self.material_context=cursor.material_context
                         cursor.save()
+                    material = {e['instance_id']:instance_params(config,e)
+                                for e in self.scheduler.instances.values() if e['func_name']=='mad.material_sweep'}
                     MaterialStore(self.material_repository).freeze(self.material_context,
-                        self.material_context if self.plan_pass else 'routine')
+                        self.material_context if self.plan_pass else 'routine',params_by_id=material)
                 queue=None if continuous else self.scheduler.eligible(once=True,task_ids=selection)
                 if self.plan_pass:
                     for reason in cursor.selected(queue,self.scheduler.instances):
@@ -265,7 +269,7 @@ class MadThread:
         for attempt in range(3):
             if attempt: self.logger.info('Retry Task %s %s',activity,attempt)
             try: return self.func_dict[activity](self)
-            except RequestHumanTakeOver:
+            except (RequestHumanTakeOver,SweepResultUncertain):
                 raise
             except GameDayChanged:
                 if self.plan_pass: raise

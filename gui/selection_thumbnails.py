@@ -19,7 +19,10 @@ def thumbnail_catalog():
 
 def thumbnail_entry(kind, key):
     if kind == 'stages':
-        key = key.split('-')[0] if key.startswith('normal:') else key.rsplit(':', 1)[0]
+        if key.startswith(('normal:', 'hard:')):
+            key = 'normal:' + key.split(':', 1)[1].split('-')[0]  # both difficulties share zone art
+        else:
+            key = key.rsplit(':', 1)[0]
     return thumbnail_catalog()[kind].get(key, {})
 
 
@@ -86,7 +89,7 @@ def action_icon(key):
     """Abstract actions use the existing Fluent icon set, not unrelated game art."""
     icon = {
         'mad.stamina_claim': FIF.LEAF, 'mad.flara_sweep': FIF.PEOPLE,
-        'mad.normal_sweep': FIF.FLAG, 'mad.material_sweep': FIF.TILES,
+        'mad.normal_sweep': FIF.FLAG, 'mad.hard_sweep': FIF.FLAG, 'mad.material_sweep': FIF.TILES,
         'mad.procurement_sweep': FIF.SYNC, 'mad.gold_shop': FIF.SHOPPING_CART,
         'mad.dating': FIF.HEART, 'mad.mail': FIF.MAIL, 'mad.claim_all': FIF.CHECKBOX,
         'activity': FIF.FLAG, 'pass': FIF.CALENDAR, 'mall': FIF.SHOPPING_CART,

@@ -20,7 +20,8 @@ def co_detect(
     pop_ups_rgb_reactions: dict = None,
     pop_ups_img_reactions: dict = None,
     time_out=600,
-    check_pkg_interval=20
+    check_pkg_interval=20,
+    handle_popups=True
 ):
     """
         Detects specific RGB or image features on the screen and performs actions based on the detection.
@@ -40,6 +41,7 @@ def co_detect(
             pop_ups_img_reactions (dict, optional): Possible image features for pop-ups and their corresponding click positions.
             time_out (int, optional): Timeout(second(s)) for the detection process.
             check_pkg_interval (int, optional): Interval(second(s)) for checking the current package.
+            handle_popups (bool, optional): Allow general popup reactions while waiting.
 
         Raises:
             FunctionCallTimeout: If the detection process times out.
@@ -140,7 +142,7 @@ def co_detect(
                         self.last_click_position = (click[0], click[1])
                         self.last_click_name = img_feature
                     break
-        if not matched and not deal_with_pop_ups(self, pop_ups_rgb_reactions, pop_ups_img_reactions):
+        if not matched and not (handle_popups and deal_with_pop_ups(self, pop_ups_rgb_reactions, pop_ups_img_reactions)):
             if tentative_click:
                 fail_cnt += 1
                 if fail_cnt > max_fail_cnt:

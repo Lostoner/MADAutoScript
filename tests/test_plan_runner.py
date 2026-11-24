@@ -144,6 +144,26 @@ class CalendarExecution(TestCase):
         self.assertEqual(self.join()['status'],'completed')
         self.assertEqual(self.calls,keys)
 
+    def test_hard_partial_continues_to_mail_and_uncertain_resume_requires_review(self):
+        from core.exception import SweepResultUncertain
+        hard='mad.hard_sweep'; stage='hard:5-1'
+        self.spec['params_by_id'][hard]['plans']=[{'stage_id':stage,'count':3}]
+        self.schedule([hard,'mad.mail'])
+        def partial(w):
+            w.repository.complete_sweep(hard,stage,2)
+            w.note('尚有一次',status='PARTIAL',completed=2,remaining=[{'stage_id':stage,'count':1}])
+        self.behaviours[hard]=partial
+        self.assertTrue(self.runner.poll()); r=self.join()
+        self.assertEqual((r['status'],r['remaining'],self.calls),('partial',[hard],[hard,'mad.mail']))
+        def uncertain(_): raise SweepResultUncertain('结算待核对')
+        self.behaviours[hard]=uncertain
+        self.assertTrue(self.runner.start_today(remaining=True)); r=self.join()
+        self.assertEqual((r['status'],r['inflight']['instance_id']),('needs_review',hard))
+        self.assertFalse(self.runner.poll()); self.assertFalse(self.runner.start_today())
+        self.assertEqual(self.store.day_repository(self.day).load_config()['unfinished_tasks'][hard],
+                         [{'stage_id':stage,'count':1}])
+        self.assertEqual(self.repo.load_config()['unfinished_tasks'][hard],[])
+
     def test_missed_dates_rest_device_wait_and_ordinary_run_conflict(self):
         self.schedule(['mad.mail'],days=4,auto=False)
         p=self.store.load()

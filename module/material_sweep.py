@@ -1,4 +1,4 @@
-"""Execute finite NORMAL quotas, with optional exact-stock stopping conditions."""
+"""Execute finite material quotas, with optional exact-stock stopping conditions."""
 from copy import deepcopy
 import re
 import time
@@ -6,15 +6,16 @@ import cv2
 
 from core.game_catalog import stage_options
 from core.material_store import MaterialStore, TASK
-from core.material_planner import catalog, plan, stock_limited, active_targets, source_refs, stage_order
-from core.picture import co_detect
+from core.material_planner import (catalog, plan, stock_limited, active_targets, source_refs,
+                                   stage_order, is_hard, hard_allowance)
 from module import sweep_utils as sweep
 from module.normal_sweep import navigate
+from module.hard_sweep import navigate as navigate_hard
 
 
-def exact_inventory(lines, name):
+def exact_inventory(lines, name, *aliases):
     clean = [re.sub(r'\s+','',s).lstrip('|丨') for s in lines]
-    if re.sub(r'\s+','',name) not in clean: return None
+    if {re.sub(r'\s+','',n) for n in (name,*aliases)}.isdisjoint(clean): return None
     values = []
     for text in clean:
         match = re.fullmatch(r'拥有数量[:：]([0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)',text)
@@ -22,13 +23,25 @@ def exact_inventory(lines, name):
     return values[0] if len(values)==1 else None
 
 
+def stage_status(stage, availability):
+    if is_hard(stage):
+        if availability is None:
+            return {'status':'unknown','reason':'HARD 关卡或剩余次数待确认'}
+        if type(availability) is int:
+            return {'status':'sweepable' if availability else 'unavailable',
+                    'remaining_attempts':availability,'reason':'' if availability else '今日进入次数已用完'}
+    return {'status':'sweepable' if availability else 'unavailable',
+            'reason':'' if availability else '区域锁定、未三星或扫荡按钮不可用'}
+
+
 class Observer:
     def __init__(self, worker):
         self.w = worker
         self.data = catalog()
         self.options = stage_options('mad.normal_sweep')
+        self.hard_options = None
         self.blocked_zones = set()
-        self.unavailable = set()
+        self.unavailable = {}
         self.snapshot = None
 
     def validate_version(self):
@@ -42,14 +55,23 @@ class Observer:
 
     def select(self, stage_id):
         w = self.w
-        option = self.options[stage_id]
-        if option['zone'] in self.blocked_zones: return False
+        hard = is_hard(stage_id)
+        task = 'mad.hard_sweep' if hard else 'mad.normal_sweep'
+        if hard and self.hard_options is None: self.hard_options = stage_options(task)
+        option = (self.hard_options if hard else self.options)[stage_id]
+        zone = (task,option['zone'])
+        if zone in self.blocked_zones: return False
         w.sweep_page = 'normal_stage'
         sweep.enter(w,w.sweep_page)
-        if not navigate(w,option,check_locked=True):
-            self.blocked_zones.add(option['zone'])
-            return False
-        return sweep.select_stage(w,'mad.normal_sweep',stage_id)
+        try:
+            if not (navigate_hard(w,option) if hard else navigate(w,option,check_locked=True)):
+                self.blocked_zones.add(zone)
+                return False
+            return sweep.select_stage(w,task,stage_id)
+        except sweep.HardScreenUnreadable as error:
+            if not (hard and w.match('normal_stage') and w.match('hard_difficulty')): raise
+            w.logger.warning('%s：%s',option['title'],error)
+            return None  # Skip this source without treating an unrecognised row as a lock.
 
     def stock_on_stage(self, refs):
         w = self.w
@@ -75,7 +97,8 @@ class Observer:
                 w.update_screenshot_array()
                 lines = [r['text'] for r in w.scan((cx-384,cy-84,cx-18,cy+76))]
                 for ref in refs:
-                    value = exact_inventory(lines,self.data['items'][ref]['name'])
+                    item = self.data['items'][ref]
+                    value = exact_inventory(lines,item['name'],*item.get('aliases',[]))
                     if value is not None: values[ref] = value
                 w.click(300,600,wait_over=True)
                 if all(v is not None for v in values.values()): break
@@ -113,8 +136,8 @@ class Observer:
             observation['balance'] = sweep.list_balance(w)
         return observation
 
-    def reject_stage(self, stage_id):
-        self.unavailable.add(stage_id)
+    def reject_stage(self, stage_id, availability=False):
+        self.unavailable[stage_id] = stage_status(stage_id,availability)
 
     def read_stock(self, refs, observation):
         if not refs: return
@@ -133,9 +156,26 @@ class Observer:
         rules = snapshot.get('rules',{}).get(getattr(self.w,'current_instance_id',None),{})
         observation = {'inventory':{},'inventory_at':{},'stages':{},'balance':None,
                        'at':time.time(),'source':'game','game_version':self.data['game_version']}
-        for stage in self.unavailable: observation['stages'][stage] = {'status':'unavailable','reason':'本次已确认不可扫'}
+        observation['stages'].update(self.unavailable)
         uncovered = set(targets)
-        candidates = {s:source_refs(s,targets,rules,self.data) for s in self.data['stages'] if s not in self.unavailable}
+        candidates, hard_sources = {}, {}
+        for stage in self.data['stages']:
+            if stage in self.unavailable: continue
+            refs = source_refs(stage,targets,rules,self.data)
+            if refs: (hard_sources if is_hard(stage) else candidates)[stage] = refs
+
+        def observe_stage(stage, related):
+            self.w.guard.check()
+            availability = self.select(stage)
+            status = observation['stages'][stage] = stage_status(stage,availability)
+            if status['status']!='sweepable': return False
+            self.read_stock([r for r in related if stock_limited(targets[r]) and
+                             (r not in observation['inventory'] or
+                              (is_hard(stage) and observation['inventory'][r] is None))],observation)
+            balance = sweep.list_balance(self.w)
+            if balance is not None or not is_hard(stage): observation['balance'] = balance
+            return True
+
         for ref in targets:
             while ref in uncovered:
                 options = [s for s,refs in candidates.items() if ref in refs]
@@ -143,14 +183,10 @@ class Observer:
                 stage = min(options,key=lambda s:(-sum(targets[r]['weight'] for r in candidates[s] if r in uncovered),
                     self.data['stages'][s]['cost'],stage_order(s)))
                 related = candidates.pop(stage)
-                self.w.guard.check()
-                available = self.select(stage)
-                observation['stages'][stage] = {'status':'sweepable' if available else 'unavailable',
-                    'reason':'' if available else '区域锁定、未三星或扫荡按钮不可用'}
-                if not available: continue
-                self.read_stock([r for r in related if stock_limited(targets[r]) and r not in observation['inventory']],observation)
-                observation['balance'] = sweep.list_balance(self.w)
-                uncovered.difference_update(related)
+                if observe_stage(stage,related): uncovered.difference_update(related)
+        # Unlike NORMAL, one verified source may not have enough daily entries.
+        # Read all eligible memory sources in area order, without buying/resetting.
+        for stage in sorted(hard_sources,key=stage_order): observe_stage(stage,hard_sources[stage])
         return observation
 
     def after_batch(self, observation, stage_id, batch):
@@ -169,7 +205,8 @@ class Observer:
 
 def sync(worker):
     store = MaterialStore(worker.material_repository)
-    snapshot = {'targets':store.definitions()['targets'],'catalog_version':catalog()['version'],'rules':{},'allocation_version':2}
+    snapshot = {'targets':store.definitions()['targets'],'catalog_version':catalog()['version'],
+                'rules':{},'allocation_version':2} if worker.material_snapshot is None else worker.material_snapshot
     if store.state()['pending'] and store.state()['pending']['phase']=='confirming':
         raise RuntimeError('上批素材消费结果待核对，请先在素材目标窗口处理。')
     obs = Observer(worker).collect(snapshot)
@@ -186,11 +223,11 @@ def execute(worker, store, context, observer):
 
 def execute_inventory(worker, store, context, observer):
     state = store.state()
-    snapshot = state['rounds'][context]['snapshot']
+    snapshot = store.for_step(state['rounds'][context]['snapshot'],worker.current_instance_id)
     pending = state['pending']
     if pending:
         if pending['phase']=='confirming': raise RuntimeError('上批素材消费结果待核对，已阻止重复确认。')
-        previous = state['rounds'][pending['context']]['snapshot']
+        previous = store.for_step(state['rounds'][pending['context']]['snapshot'],pending['instance'])
         observed = observer.collect(previous)
         store.settle(pending['id'],observed)
     if not store.remaining(snapshot):
@@ -257,8 +294,8 @@ def execute_priority(worker, store, context, observer):
         if pending['phase']=='confirming': raise RuntimeError('上批素材消费结果待核对，已阻止重复确认。')
         # The confirmed count is durable even when inventory/OCR is unavailable.
         store.settle(pending['id'],{})
-    snapshot = deepcopy(state['rounds'][context]['snapshot'])
     instance = worker.current_instance_id
+    snapshot = deepcopy(store.for_step(state['rounds'][context]['snapshot'],instance))
     key = getattr(worker,'material_allocation_id',instance)
     inventory_only = getattr(worker,'material_inventory_only',False)
     snapshot['inventory_only'] = inventory_only
@@ -325,21 +362,31 @@ def execute_priority(worker, store, context, observer):
         if not rows:
             waiting = '；'.join(dict.fromkeys(allocation.get('waiting',{}).values()))
             return report(waiting+'；继续后续任务。' if allocation.get('waiting_data') else '')
-        if any(observation.get('stages',{}).get(r['stage_id'],{}).get('status')!='sweepable' or
-               any(ref not in source_refs(r['stage_id'],active,rules,data) for ref in r['refs']) for r in rows):
+        def needs_replan(row):
+            stage = row['stage_id']
+            state = observation.get('stages',{}).get(stage,{})
+            return (state.get('status')!='sweepable' or
+                    (is_hard(stage) and row['count']>(hard_allowance(state) or 0)) or
+                    any(ref not in source_refs(stage,active,rules,data) for ref in row['refs']))
+        if any(needs_replan(r) for r in rows):
             if not replan(): return report('当前来源或库存条件待确认，已保留未完成次数；继续后续任务。')
             continue
-        row = rows[0]; stage = row['stage_id']; cost = data['stages'][stage]['cost']
-        refs = source_refs(stage,active,rules,data)
         balance = observation.get('balance')
-        if type(balance) is not int or balance-reserve < cost:
+        row = (next((r for r in rows if data['stages'][r['stage_id']]['cost']<=balance-reserve),None)
+               if type(balance) is int else None)
+        if row is None:
             return report('当前体力不足或已达到保留体力，未完成次数保留；继续后续任务。')
+        stage = row['stage_id']; cost = data['stages'][stage]['cost']; hard = is_hard(stage)
+        refs = source_refs(stage,active,rules,data)
         limited = any(stock_limited(t) and t['ref'] in data['stages'][stage]['drops'] for t in store.remaining(snapshot))
         count = min(row['count'],1 if limited else 5,(balance-reserve)//cost)
         caps = [rules[r]['max_runs']-used.get(r,0) for r in refs if rules.get(r,{}).get('max_runs') is not None]
         if caps: count = min(count,min(caps))
-        if not observer.select(stage):
-            observer.reject_stage(stage)
+        availability = observer.select(stage)
+        live_limit = hard_allowance(stage_status(stage,availability)) if hard else None
+        if not availability or (hard and not live_limit):
+            if hard: observer.reject_stage(stage,availability)
+            else: observer.reject_stage(stage)
             observation = observer.collect(snapshot); store.observe(observation,snapshot)
             if not replan(): return report('原关卡不可扫，未完成次数保留；继续后续任务。')
             continue
@@ -352,12 +399,15 @@ def execute_priority(worker, store, context, observer):
             if getattr(worker,'plan_pass',None): worker.plan_pass.check_day()
             worker.guard.check()
             batch_id = store.prepare_batch(context,instance,stage,actual,refs,key)
-        batch = sweep.start_sweep(worker,count,cost,before_confirm=before_confirm)
+        limit = {'hard_limit':live_limit} if hard else {}
+        batch = sweep.start_sweep(worker,count,cost,before_confirm=before_confirm,**limit)
         if not batch.count:
             if batch_id: raise RuntimeError('已发送素材消费但未取得结果，请核对后继续。')
             if batch.stage_limited:
-                observer.reject_stage(stage)
-                worker.to_main_page()
+                if hard: observer.reject_stage(stage,0)
+                else:
+                    observer.reject_stage(stage)
+                    worker.to_main_page()
                 observation = observer.collect(snapshot); store.observe(observation,snapshot)
                 if not replan(): return report('关卡次数已用尽，余项保留；继续后续任务。')
                 continue
@@ -365,6 +415,7 @@ def execute_priority(worker, store, context, observer):
         store.result_seen(batch_id,batch.count)
         store.settle(batch_id,{})
         sweep.return_to_list(worker)
+        if hard: observation['stages'][stage] = stage_status(stage,max(0,live_limit-batch.count))
         observation = observer.after_batch(observation,stage,batch)
         store.observe(observation,snapshot)
 

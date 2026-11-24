@@ -11,7 +11,7 @@ from qfluentwidgets import LineEdit, PushButton, PrimaryPushButton
 from core.paths import REPO_ROOT
 from gui.theme import typography, apply_typography, ui_font
 
-CATEGORIES={'voucher':'装备兑换券','equipment':'基础装备','currency':'通用资源'}
+CATEGORIES={'voucher':'装备兑换券','equipment':'基础装备','memory':'伙伴记忆','currency':'通用资源'}
 
 
 def material_icon(item):
@@ -72,7 +72,7 @@ class MaterialPicker(QDialog):
         outer=QVBoxLayout(self); outer.setContentsMargins(22,18,22,18); outer.setSpacing(12)
         outer.addWidget(typography(QLabel('选择需要的素材'),22,True))
         self.search=LineEdit(self)
-        self.search.setPlaceholderText('搜索全部素材，例如：T3 耳环、项链、信用点')
+        self.search.setPlaceholderText('搜索全部素材，例如：T3 耳环、芙蕾雅、信用点')
         self.search.setClearButtonEnabled(True); self.search.setAccessibleName('搜索全部素材')
         outer.addWidget(self.search)
         categories=QHBoxLayout(); categories.setSpacing(8)
@@ -104,7 +104,8 @@ class MaterialPicker(QDialog):
         self.rows={}
         for ref,item in items.items():
             suffix=('已添加' if ref in self.existing else '来源待补验' if item['verification']=='public_table_pending_live'
-                    else 'T1 · '+item['slot'] if item['category']=='equipment' else '')
+                    else 'T1 · '+item['slot'] if item['category']=='equipment'
+                    else 'HARD 来源' if item['category']=='memory' else '')
             row=QListWidgetItem(material_icon(item),item['name']+('\n'+suffix if suffix else ''))
             row.setData(Qt.UserRole,ref); row.setData(Qt.UserRole+1,suffix); row.setToolTip(material_tooltip(item))
             row.setTextAlignment(Qt.AlignCenter); row.setSizeHint(QSize(188,120))
@@ -163,7 +164,8 @@ class MaterialPicker(QDialog):
         visible=[]
         for ref,item in self.items.items():
             haystack=' '.join((item['name'],item['slot'],CATEGORIES[item['category']],
-                               'T'+str(item['tier']) if item['tier'] else '')).casefold()
+                               'T'+str(item['tier']) if item['tier'] else '',
+                               '角色碎片' if item['category']=='memory' else '',*item.get('aliases',[]))).casefold()
             match=(all(word in haystack for word in words) if searching else
                    (self.category=='all' or item['category']==self.category) and
                    (self.category!='voucher' or self.tier is None or item['tier']==self.tier))

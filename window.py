@@ -136,9 +136,14 @@ class Window(QMainWindow):
 
     def _show_materials(self, scope, key, action):
         from gui.fragments.materials import MaterialDialog
-        editor=self.plan_page.editor if scope.startswith('plan:') else self.routineInterface
-        dialog=MaterialDialog(self.repository,self.theme,key,editor.editors[key].value().get('reserve',0),scope,self,
-                              instance_name=editor._event(key)['event_name'])
+        is_plan=scope.startswith('plan:')
+        editor=self.plan_page.editor if is_plan else self.routineInterface
+        params=editor.editors[key].value()
+        dialog=MaterialDialog(self.repository,self.theme,key,params.get('reserve',0),scope,self,
+                              instance_name=editor._event(key)['event_name'],params=params,
+                              apply_targets=lambda goals,previous:editor.apply_material_targets(key,goals,previous),
+                              draft_destination=editor.material_draft_destination(key),
+                              read_only=is_plan and self.plan_page._locked(scope[5:]))
         self.material_dialog=dialog
         dialog.syncRequested.connect(self._sync_materials)
         dialog.stopRequested.connect(self._request_stop)
@@ -153,11 +158,11 @@ class Window(QMainWindow):
         dialog.deleteLater()
         self._refresh_recovery()
 
-    def _sync_materials(self):
+    def _sync_materials(self,snapshot=None):
         if self.worker and self.worker.is_running: return
         self.homeInterface.begin_run('同步素材数据')
         self._set_state('starting')
-        try: self.runtime.sync_materials()
+        try: self.runtime.sync_materials(snapshot)
         except Exception as error:
             self._set_state('failed'); self.homeInterface.on_log_received('ERROR',str(error))
             self.homeInterface.show_error(error)
@@ -350,14 +355,13 @@ class Window(QMainWindow):
 
     def _display_tasks(self, event):
         tasks = [dict(item) for item in event.get('result', {}).get('tasks', [])]
-        # A later material instruction can satisfy an earlier instruction's goals.
-        # Clear resolved stock conditions, never another step's count debt.
+        # Recheck the affected instruction's stock goals and saved count debt.
         from core.material_store import MaterialStore
         store = MaterialStore(self.repository)
         for item in tasks:
             if item.get('task_id') == 'mad.material_sweep' and item.get('status') == 'PARTIAL' and item.get('material_context'):
                 round_ = store.state()['rounds'].get(item['material_context'])
-                if round_ and not store.needs_work(item['material_context'],item.get('material_allocation')):
+                if round_ and not store.needs_work(item['material_context'],item.get('material_allocation'),item.get('instance_id')):
                     item.update(status='SUCCESS', reason='本次安排和库存条件已完成。')
         return tasks
 

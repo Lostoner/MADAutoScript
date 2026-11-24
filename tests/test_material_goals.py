@@ -7,7 +7,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from core.config.repository import ProfileRepository
-from core.material_store import MaterialStore, TASK, MANUAL_PREVIEW_TTL
+from core.material_store import MaterialStore, TASK, MANUAL_PREVIEW_TTL, copy_targets
 from core.material_planner import catalog, plan
 from core.plan_store import PlanStore
 from core.plan_runner import PlanPass
@@ -34,17 +34,27 @@ def fixture():
 
 
 class PlannerTests(TestCase):
-    def test_catalog_has_only_repeat_normal_public_data(self):
+    def test_public_catalog_keeps_normal_data_and_adds_repeat_memory_sources(self):
         data=catalog()
-        self.assertEqual((len(data['items']),len(data['stages'])),(61,180))
+        self.assertEqual((len(data['items']),len(data['stages'])),(90,240))
         self.assertEqual(sum(i['verification']=='public_table_pending_live' for i in data['items'].values()),13)
         self.assertNotIn('item:80601',data['items'])
         from core.game_catalog import stage_options
-        self.assertEqual(set(data['stages']),set(stage_options('mad.normal_sweep')))
+        normal,hard=stage_options('mad.normal_sweep'),stage_options('mad.hard_sweep')
+        self.assertEqual(set(data['stages']),normal.keys() | hard.keys())
+        memories={r:item for r,item in data['items'].items() if item['category']=='memory'}
+        self.assertEqual(len(memories),29)
+        for stage, option in hard.items():
+            row=data['stages'][stage]
+            self.assertEqual(row['cost'],option['cost'])
+            self.assertEqual(set(row['drops']),{ref for ref,item in memories.items() if stage in item['sources']})
+            self.assertEqual(len(row['drops']),1)
+        self.assertEqual(memories['item:29']['sources'],['hard:1-1','hard:8-1','hard:15-2'])
 
     def test_exact_inventory_requires_identity_and_unabbreviated_number(self):
         self.assertEqual(exact_inventory(['T2耳环兑换券','拥有数量：0'],'T2耳环兑换券'),0)
         self.assertEqual(exact_inventory(['T2耳环兑换券','拥有数量：1,234'],'T2耳环兑换券'),1234)
+        self.assertEqual(exact_inventory(['雫的记忆','拥有数量：9'],'零的记忆','雫的记忆'),9)
         for lines in (['其他素材','拥有数量：15'],['T2耳环兑换券','拥有数量：1.2K'],
                       ['T2耳环兑换券','拥有数量：1.0'],['T2耳环兑换券','拥有数量：1,2']):
             self.assertIsNone(exact_inventory(lines,'T2耳环兑换券'))
@@ -116,16 +126,19 @@ class StorageTests(TestCase):
     def observation(self, amount):
         return {'inventory':{A:amount},'stages':{S:{'status':'sweepable'}},'balance':100,'at':1,'source':'game'}
 
+    def freeze(self, context):
+        return self.store.for_step(self.store.freeze(context),TASK)
+
     def test_completion_is_versioned_sticky_and_not_reset_by_round_or_day(self):
-        old=self.store.freeze('one'); self.store.observe(self.observation(10),old)
+        old=self.freeze('one'); self.store.observe(self.observation(10),old)
         self.store.observe(self.observation(0),old); self.repo.reset_progress()
-        self.assertFalse(self.store.remaining(self.store.freeze('two')))
+        self.assertFalse(self.store.remaining(self.freeze('two')))
         draft=self.store.definitions(); draft['targets'][0]['priority']=2
-        self.store.save_targets(draft['targets']); self.assertFalse(self.store.remaining(self.store.freeze('three')))
+        self.store.save_targets(draft['targets']); self.assertFalse(self.store.remaining(self.freeze('three')))
         draft=self.store.definitions(); draft['targets'][0]['amount']=20
         new=self.store.save_targets(draft['targets'])
         self.assertNotEqual(new['targets'][0]['version'],old['targets'][0]['version'])
-        self.assertTrue(self.store.remaining(self.store.freeze('four')))
+        self.assertTrue(self.store.remaining(self.freeze('four')))
         self.assertFalse(self.store.remaining(old))
 
     def test_temporary_overrides_do_not_copy_to_next_round(self):
@@ -135,7 +148,7 @@ class StorageTests(TestCase):
         self.assertEqual(second['rules'],{})
 
     def test_batch_identity_applies_once_and_unknown_requires_disposition(self):
-        snap=self.store.freeze('one')
+        snap=self.freeze('one')
         batch=self.store.prepare_batch('one','tail',S,2,[A])
         with self.assertRaises(RuntimeError): self.store.settle(batch,self.observation(10))
         with self.assertRaises(RuntimeError): self.store.prepare_batch('one','other',S,1,[A])
@@ -149,7 +162,7 @@ class StorageTests(TestCase):
         self.assertTrue(self.store.remaining(snap))
 
     def test_manual_inventory_does_not_claim_permanent_completion(self):
-        snap=self.store.freeze('one'); self.store.correct_inventory(A,50)
+        snap=self.freeze('one'); self.store.correct_inventory(A,50)
         self.assertTrue(self.store.remaining(snap))
         self.assertEqual(self.store.state()['observation']['source'],'manual')
         at=self.store.state()['observation']['manual'][A]
@@ -157,13 +170,13 @@ class StorageTests(TestCase):
         self.assertIsNone(self.store.preview_observation(at+MANUAL_PREVIEW_TTL+1)['inventory'][A])
 
     def test_pause_reopen_and_order_preserve_the_intended_completion_version(self):
-        snap=self.store.freeze('one'); self.store.observe(self.observation(10),snap)
+        snap=self.freeze('one'); self.store.observe(self.observation(10),snap)
         goals=self.store.definitions()['targets']; goals[0]['enabled']=False
         self.store.save_targets(goals); goals[0]['enabled']=True
         self.store.save_targets(goals)
-        self.assertFalse(self.store.remaining(self.store.freeze('two')))
+        self.assertFalse(self.store.remaining(self.freeze('two')))
         goals[0]['reopen']=True; self.store.save_targets(goals)
-        self.assertTrue(self.store.remaining(self.store.freeze('three')))
+        self.assertTrue(self.store.remaining(self.freeze('three')))
 
     def test_plan_freezes_intent_and_uses_original_profile_state(self):
         plans=PlanStore(self.repo); day=plans.today(); draft=plans.load()
@@ -177,17 +190,23 @@ class StorageTests(TestCase):
         policy=PlanPass(plans,day,daily,plans.clock)
         worker=MadThread(daily,plan_pass=policy)
         self.assertEqual(worker.material_repository.profile_dir,self.repo.profile_dir)
-        self.store.observe(self.observation(10),first)
-        policy.tasks=[{'instance_id':'front','status':'PARTIAL','task_id':TASK}, {'instance_id':'tail','status':'SUCCESS','task_id':TASK}]
+        self.store.observe(self.observation(10),self.store.for_step(first,TASK))
+        policy.tasks=[{'instance_id':TASK,'status':'PARTIAL','task_id':TASK}]
         policy.finish_pass()
         self.assertEqual(plans.record(day)['status'],'completed')
         self.assertTrue(self.store.remaining({'targets':self.store.definitions()['targets']}))
 
     def test_plan_manual_unknown_keeps_goal_partial_and_resume_cannot_refill_quota(self):
         from core.plan_runner import PlanRunner
+        from core.runtime_state import atomic_json
         plans=PlanStore(self.repo); day=plans.today(); draft=plans.load()
         draft['days'][day]={'kind':'tasks','routine':plans.from_daily()}; plans.save(draft)
         daily=plans.day_repository(day); policy=PlanPass(plans,day,daily,plans.clock)
+        # Simulate an old frozen day with an inventory receipt lacking an allocation key.
+        state=self.store.state(); current=state['rounds']['plan:'+day]
+        current['snapshot']=self.store.for_step(current['snapshot'],TASK)
+        current['snapshot'].pop('allocation_version')
+        atomic_json(self.store.state_path,state)
         token=['main',TASK,1]; policy.group(TASK,0)
         policy.begin_step(TASK,token,{'instance_id':TASK,'task_id':TASK,'event_name':'素材'})
         self.store.prepare_batch('plan:'+day,TASK,S,2,[A])
@@ -208,7 +227,9 @@ class ExecutionTests(TestCase):
 
     def run_material(self, stock=0, balance=100, cap=None):
         if cap is not None: self.store.set_adjustments('routine','front',{A:{'stage':S,'max_runs':cap}})
-        self.snapshot=self.store.freeze('round')
+        goals=self.store.definitions()['targets']
+        frozen=self.store.freeze('round',params_by_id={'front':{'targets':goals},'tail':{'targets':copy_targets(goals)}})
+        self.snapshot=self.store.for_step(frozen,'front')
         self.worker=SimpleNamespace(current_instance_id='front',task_params={'material_sweep':{'reserve':0}},
                                     guard=Mock(),plan_pass=None,note=Mock(),click=Mock(),to_main_page=Mock())
         self.observer=Mock()
@@ -237,13 +258,15 @@ class ExecutionTests(TestCase):
         self.assertEqual(self.calls,[]); self.assertFalse(self.store.remaining(self.snapshot))
         self.assertEqual(self.worker.note.call_args.kwargs['status'],'SKIPPED')
 
-    def test_front_reward_tail_share_stock_and_manual_limit_does_not_replenish(self):
+    def test_front_reward_tail_use_real_stock_but_keep_separate_completion(self):
         self.run_material(stock=0,balance=100,cap=2)
         self.assertEqual(sum(self.calls),2)
         self.continue_material(); self.assertEqual(sum(self.calls),2)
         self.stock=9; self.balance=10; self.worker.current_instance_id='tail'
         self.continue_material()
-        self.assertEqual(sum(self.calls),3); self.assertFalse(self.store.remaining(self.snapshot))
+        self.assertEqual((sum(self.calls),self.store.state()['observation']['inventory'][A]),(3,10))
+        self.assertFalse(self.store.remaining(self.store.for_step(self.store.freeze('round'),'tail')))
+        self.assertTrue(self.store.remaining(self.snapshot))
 
     def test_resource_boundary_consumes_only_affordable_then_continues_task_chain(self):
         self.run_material(stock=0,balance=27)
@@ -262,7 +285,7 @@ class ExecutionTests(TestCase):
         self.run_material(stock=9,balance=10)
         # A separate pending receipt whose result was displayed before a crash.
         self.store.save_targets([target(amount=20)])
-        self.store.freeze('new')
+        self.store.freeze('new',params_by_id={'front':self.store.definitions()})
         batch=self.store.prepare_batch('new','front',S,1,[A]);self.store.result_seen(batch,1)
         self.worker.current_instance_id='front'; self.balance=0; self.stock=11
         with patch.object(sweep,'start_sweep',side_effect=self.start):
@@ -304,7 +327,7 @@ class ExecutionTests(TestCase):
                                       (['ZONE1','ZONE1'],False,1),(['ZONE1','ZONE3'],False,1)):
             with self.subTest(lines=lines):
                 w=SimpleNamespace(line=Mock(side_effect=lines),click=Mock(),update_screenshot_array=Mock())
-                with patch('module.normal_sweep.co_detect'):
+                with patch('module.sweep_utils.co_detect'):
                     self.assertEqual(navigate(w,{'zone':3},check_locked=True),expected)
                 self.assertEqual(w.click.call_count,clicks)
 

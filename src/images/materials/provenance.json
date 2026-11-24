@@ -247,6 +247,122 @@
     "item:90112": {
       "file": "src/images/materials/item-90112.webp",
       "source_path": "public/icons/equip/Icon_Equipment_Panties_Tier1.webp"
+    },
+    "item:1": {
+      "file": "src/images/materials/item-1.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0001.webp"
+    },
+    "item:2": {
+      "file": "src/images/materials/item-2.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0002.webp"
+    },
+    "item:5": {
+      "file": "src/images/materials/item-5.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0005.webp"
+    },
+    "item:6": {
+      "file": "src/images/materials/item-6.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0006.webp"
+    },
+    "item:7": {
+      "file": "src/images/materials/item-7.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0007.webp"
+    },
+    "item:12": {
+      "file": "src/images/materials/item-12.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0012.webp"
+    },
+    "item:13": {
+      "file": "src/images/materials/item-13.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0013.webp"
+    },
+    "item:16": {
+      "file": "src/images/materials/item-16.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0016.webp"
+    },
+    "item:17": {
+      "file": "src/images/materials/item-17.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0017.webp"
+    },
+    "item:20": {
+      "file": "src/images/materials/item-20.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0020.webp"
+    },
+    "item:21": {
+      "file": "src/images/materials/item-21.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0021.webp"
+    },
+    "item:23": {
+      "file": "src/images/materials/item-23.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0023.webp"
+    },
+    "item:25": {
+      "file": "src/images/materials/item-25.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0025.webp"
+    },
+    "item:26": {
+      "file": "src/images/materials/item-26.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0026.webp"
+    },
+    "item:27": {
+      "file": "src/images/materials/item-27.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0027.webp"
+    },
+    "item:29": {
+      "file": "src/images/materials/item-29.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0029.webp"
+    },
+    "item:30": {
+      "file": "src/images/materials/item-30.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0030.webp"
+    },
+    "item:31": {
+      "file": "src/images/materials/item-31.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0031.webp"
+    },
+    "item:34": {
+      "file": "src/images/materials/item-34.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0034.webp"
+    },
+    "item:36": {
+      "file": "src/images/materials/item-36.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0036.webp"
+    },
+    "item:37": {
+      "file": "src/images/materials/item-37.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0037.webp"
+    },
+    "item:39": {
+      "file": "src/images/materials/item-39.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0039.webp"
+    },
+    "item:46": {
+      "file": "src/images/materials/item-46.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0046.webp"
+    },
+    "item:50": {
+      "file": "src/images/materials/item-50.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0050.webp"
+    },
+    "item:53": {
+      "file": "src/images/materials/item-53.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0053.webp"
+    },
+    "item:54": {
+      "file": "src/images/materials/item-54.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0054.webp"
+    },
+    "item:56": {
+      "file": "src/images/materials/item-56.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0056.webp"
+    },
+    "item:62": {
+      "file": "src/images/materials/item-62.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0062.webp"
+    },
+    "item:63": {
+      "file": "src/images/materials/item-63.webp",
+      "source_path": "public/icons/item/Icon_Character_Piece_CH0063.webp"
     }
   }
 }

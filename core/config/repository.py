@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 from core.paths import DEFAULT_PROFILE_DIR, REPO_ROOT
 from core.runtime_state import atomic_json
 from core.tasks import TASKS, SWEEP_TASKS
-from core.game_catalog import SHOP_ITEMS
+from core.game_catalog import SHOP_ITEMS, stage_options
 from .default_config import SCHEMA_VERSION, default_config, default_events, default_app_settings
 
 lock=threading.RLock()
@@ -75,11 +75,18 @@ def _validate(config):
         _validate_params(task,config['routine'].get(task[4:],{}))
 
 def _validate_params(task,params):
-    if task=='mad.material_sweep' and (type(params.get('reserve')) is not int or params['reserve']<0):
-        raise ConfigValidationError('保留体力须为非负整数')
+    if task=='mad.material_sweep':
+        if type(params.get('reserve')) is not int or params['reserve']<0:
+            raise ConfigValidationError('保留体力须为非负整数')
+        if 'targets' in params:
+            from core.material_store import validate_targets
+            validate_targets(params['targets'],saved=True)
     if task in SWEEP_TASKS:
         seen=set()
+        hard=stage_options(task) if task=='mad.hard_sweep' and params['plans'] else None
         for plan in params['plans']:
+            if hard is not None and plan['stage_id'] not in hard:
+                raise ConfigValidationError('困难扫荡只能选择 HARD 目录中的关卡：'+str(plan['stage_id']))
             if plan['stage_id'] in seen: raise ConfigValidationError('同一关卡只能配置一次')
             seen.add(plan['stage_id'])
             if plan['count']!='max' and (type(plan['count']) is not int or plan['count']<1):
@@ -134,7 +141,9 @@ class ProfileRepository:
             if progress_path.exists(): (backup/'routine-progress.json').write_bytes(progress_path.read_bytes())
             routine=raw.setdefault('routine',{})
             queue=routine.pop('queue',None)
-            events=default_events()
+            # This migration predates HARD. Do not add a future instruction to a saved queue.
+            events=[e for e in default_events() if e['func_name']!='mad.hard_sweep']
+            for index,event in enumerate(events): event['priority']=index
             prior=_read(self.event_path,[])
             prior=prior if isinstance(prior,list) else prior.get('events',[])
             prior_by_id={e.get('func_name',e.get('task_id')):e for e in prior}
@@ -149,7 +158,8 @@ class ProfileRepository:
                 for key in ('interval','pre_task','post_task','disabled_time_range','daily_reset','next_tick'):
                     if key in prev: event[key]=deepcopy(prev[key])
             for name in ('free_seeds','mail_before','rewards_after'): routine.pop(name,None)
-            for task in SWEEP_TASKS:
+            legacy_sweeps=('mad.normal_sweep','mad.flara_sweep','mad.procurement_sweep')
+            for task in legacy_sweeps:
                 name=task[4:]
                 item=routine.setdefault(name,deepcopy(defaults['routine'][name]))
                 if 'plans' not in item:
@@ -164,7 +174,7 @@ class ProfileRepository:
             for key in ('timeout_seconds','max_actions'): raw['runtime'].pop(key,None)
             for key in ('retry_limit','retry_backoff_seconds','poll_seconds'): raw['scheduling'].pop(key,None)
             pending={}
-            for task in SWEEP_TASKS:
+            for task in legacy_sweeps:
                 pending[task]=[]
                 for plan in raw['routine'][task[4:]]['plans']:
                     done=progress.get('plans',{}).get(task,{}).get(plan['stage_id'],{})
@@ -332,6 +342,7 @@ class ProfileRepository:
                 if not event['event_name'].strip(): raise ConfigValidationError('指令名不能为空')
                 ordered.append(event)
                 params=deepcopy(params_by_id[key])
+                if task=='mad.material_sweep' and old is None: params.setdefault('targets',[])
                 _validate_params(task,params)
                 old_params=instance_params(config,event) if old else {}
                 if task in SWEEP_TASKS and (old is None or old_params.get('plans')!=params['plans']):

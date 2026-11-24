@@ -22,7 +22,7 @@ PUBLIC = [
     'scripts/install_ocr.py', 'scripts/build_release.py', 'scripts/vendor_sources.py',
     'scripts/check_install.py', 'tests/test_shop_and_picker.py',
     'tests/test_ui_workspace.py', 'tests/test_release_core.py', 'tests/test_release_privacy.py', 'tests/test_daily_refresh.py',
-    'tests/test_stage_search.py', 'tests/test_sweep_boundaries.py',
+    'tests/test_stage_search.py', 'tests/test_sweep_boundaries.py', 'docs/HARD_SWEEP_DESIGN.md',
     'tests/test_instance_storage.py', 'tests/test_instance_execution.py',
     'tests/test_plan_store.py', 'tests/test_plan_runner.py',
     'tests/test_plan_editor.py', 'tests/test_plan_window.py',
@@ -47,7 +47,9 @@ def write_json(path, data):
 
 def public_catalog(data):
     # Only game definitions belong in the release, not local discovery evidence.
-    return {key: data[key] for key in ('game_version', 'sweep', 'normal_zones', 'characters')}
+    result = {key: data[key] for key in ('game_version', 'sweep', 'normal_zones', 'characters')}
+    if 'hard_zones' in data: result['hard_zones'] = data['hard_zones']
+    return result
 
 def material_assets():
     data=json.loads((ROOT/'src/material_catalog.json').read_text('utf-8'))

@@ -62,7 +62,11 @@ class PlanStore:
             config = self.repository.load_config()
             rows = sorted(self.repository.load_events(), key=lambda row: row['priority'])
             params = {row['instance_id']: instance_params(config, row) for row in rows}
-            return ProfileRepository.routine_definition(rows, params)
+            return self.copy_routine(ProfileRepository.routine_definition(rows, params))
+
+    def copy_routine(self, spec, source_day=None):
+        from core.material_store import MaterialStore
+        return MaterialStore(self.repository).copy_definition(spec,'plan:'+source_day if source_day else 'routine')
 
     def record_path(self, day):
         return self.root/_date_key(day)/'record.json'
@@ -139,10 +143,13 @@ class PlanStore:
                 record.update(frozen=True, name=entry.get('name') or day, routine=deepcopy(entry['routine']),
                               timezone=plan['timezone'], reset_at=plan['reset_at'],
                               time=entry.get('time') or plan['default_time'])
-                if any(e['func_name']=='mad.material_sweep' for e in entry['routine']['events']):
-                    from core.material_store import MaterialStore
+                from core.material_store import MaterialStore, material_params
+                spec = entry['routine']
+                material = material_params(spec['events'],spec['params_by_id'])
+                if material:
                     record['material_context']='plan:'+day
-                    MaterialStore(self.repository).freeze(record['material_context'],record['material_context'])
+                    MaterialStore(self.repository).freeze(record['material_context'],record['material_context'],
+                                                         params_by_id=material)
                 record.setdefault('status','ready')
                 atomic_json(self.record_path(day), record)
             ordinary = self.repository.load_config()

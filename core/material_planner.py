@@ -4,6 +4,7 @@ import json
 import math
 from pathlib import Path
 
+from core.game_catalog import HARD_DAILY_LIMIT
 
 @lru_cache(maxsize=1)
 def catalog():
@@ -21,6 +22,11 @@ def stock_limited(target):
     # Missing flag is an existing, explicit inventory goal, never unlimited.
     return target.get('stock_limit_enabled', True)
 
+def stock_complete(target, completed):
+    prefix = target['ref']+'@'
+    return (prefix+target.get('version','') in completed or
+            bool(target.get('legacy_version') and prefix+target['legacy_version'] in completed))
+
 
 def active_targets(snapshot, observation, completed, rules, used):
     enabled = [t for t in snapshot['targets'] if t['enabled']]
@@ -29,7 +35,7 @@ def active_targets(snapshot, observation, completed, rules, used):
         if snapshot.get('inventory_only') and not stock_limited(target): continue
         ref = target['ref']
         if stock_limited(target):
-            if ref+'@'+target['version'] in completed: continue
+            if stock_complete(target,completed): continue
             count = observation.get('inventory', {}).get(ref)
             if type(count) is not int:
                 waiting[ref] = '库存待同步'; continue
@@ -52,12 +58,34 @@ def source_refs(stage_id, targets, rules, data):
 def stage_order(stage):
     return tuple(map(int, stage.split(':')[1].split('-')))
 
+def is_hard(stage):
+    return stage.startswith('hard:')
+
+def hard_allowance(state):
+    remaining = state.get('remaining_attempts')
+    return min(remaining,HARD_DAILY_LIMIT) if type(remaining) is int and remaining>=0 else None
+
+def allowed_sources(data, target, rules):
+    ref = target['ref']
+    pinned = rules.get(ref,{}).get('stage')
+    return [s for s in data['items'][ref]['sources']
+            if s not in target.get('excluded',[]) and (not pinned or s==pinned)]
+
+def unavailable_sources(sources, states):
+    unknown = [s for s in sources if states.get(s,{}).get('status') not in ('unavailable','sweepable')
+               or (is_hard(s) and states[s]['status']=='sweepable' and hard_allowance(states[s]) is None)]
+    if any(is_hard(s) for s in unknown): return 'HARD 关卡或剩余次数待确认',True
+    if any(is_hard(s) and hard_allowance(states.get(s,{}))==0 for s in sources):
+        return '可扫的 HARD 来源今日次数已用完',bool(unknown)
+    return '没有已确认可扫的来源',bool(unknown)
+
 
 def _shares(budget, rows, data):
-    # Proportional sweep counts, not proportional stamina. Current NORMAL costs
-    # are equal; the cost term also keeps integer rounding within the budget.
+    # Proportional sweep counts, not proportional stamina. Round on a
+    # spendable budget so an unusable stamina remainder cannot skew ties.
     costs = {data['stages'][row['stage_id']]['cost'] for row in rows}
-    usable = (budget//next(iter(costs)))*next(iter(costs)) if len(costs)==1 else budget
+    unit = math.gcd(*costs)
+    usable = budget//unit*unit
     scale = usable / sum(row['weight']*data['stages'][row['stage_id']]['cost'] for row in rows)
     quotas = [scale*row['weight'] for row in rows]
     counts = [math.floor(q) for q in quotas]
@@ -83,20 +111,23 @@ def weighted_plan(snapshot, observation, completed, rules=None, used=None, reser
         result['waiting'].update({ref:'目录版本已变化，请结束旧轮次后重新开始' for ref in targets})
         result['waiting_data'] = bool(targets or waiting)
         return result
+    states = observation.get('stages',{})
     if type(balance) is not int:
-        states = observation.get('stages',{})
         for ref,target in targets.items():
-            allowed = [s for s in data['items'][ref]['sources'] if s not in target.get('excluded',[])
-                       and (not rules.get(ref,{}).get('stage') or rules[ref]['stage']==s)]
-            unavailable = all(states.get(s,{}).get('status')=='unavailable' for s in allowed)
-            waiting[ref] = '没有已确认可扫的来源' if unavailable else '体力或可扫关卡待同步'
+            allowed = allowed_sources(data,target,rules)
+            unavailable = all(states.get(s,{}).get('status')=='unavailable' or
+                              (is_hard(s) and hard_allowance(states.get(s,{}))==0) for s in allowed)
+            waiting[ref] = unavailable_sources(allowed,states)[0] if unavailable else '体力或可扫关卡待同步'
             result['waiting_data'] |= not unavailable
         result['waiting_data'] |= any(reason=='库存待同步' for reason in waiting.values())
         return result
-    available = {s for s,v in observation.get('stages',{}).items() if v.get('status')=='sweepable' and s in data['stages']}
+    hard_left = {s:hard_allowance(v) or 0 for s,v in states.items() if is_hard(s)}
+    available = {s for s,v in states.items() if v.get('status')=='sweepable' and s in data['stages']
+                 and (not is_hard(s) or hard_left[s]>0)}
     output = {}
     while targets:
-        candidates = {s:source_refs(s,targets,rules,data) for s in available if data['stages'][s]['cost']<=budget}
+        candidates = {s:source_refs(s,targets,rules,data) for s in available
+                      if data['stages'][s]['cost']<=budget and (not is_hard(s) or hard_left[s]>0)}
         selected, covered = [], set()
         for ref in targets:
             if ref in covered: continue
@@ -117,14 +148,26 @@ def weighted_plan(snapshot, observation, completed, rules=None, used=None, reser
             limits = [rules[r]['max_runs']-planned.get(r,0) for r in refs if rules.get(r,{}).get('max_runs') is not None]
             if limits: count = min(count,max(0,min(limits)))
             if count<=0: continue
-            cost = data['stages'][stage_id]['cost']
-            saved = output.setdefault(stage_id,dict(row,count=0,cost=0,estimated={},
-                manual=any(r in rules for r in refs),reason='按同关最高优先级分配次数'))
-            saved['count'] += count; saved['cost'] += count*cost
-            saved['refs'] = list(dict.fromkeys(saved['refs']+refs))
-            budget -= count*cost
-            for ref in refs: planned[ref] = planned.get(ref,0)+count
-            changed = True
+            sources = [stage_id]
+            if is_hard(stage_id):
+                # Multiple origins of one memory share a weighted quota. A
+                # second source spends that quota, not a second copy of its weight.
+                sources += sorted((s for s,rs in candidates.items()
+                                   if s!=stage_id and is_hard(s) and rs==refs),key=stage_order)
+            for source in sources:
+                if not count: break
+                cost = data['stages'][source]['cost']
+                runs = min(count,hard_left[source],budget//cost) if is_hard(source) else count
+                if not runs: continue
+                saved = output.setdefault(source,dict(row,stage_id=source,count=0,cost=0,estimated={},
+                    manual=any(r in rules for r in refs),reason='按同关最高优先级分配次数'))
+                saved['count'] += runs; saved['cost'] += runs*cost
+                saved['refs'] = list(dict.fromkeys(saved['refs']+refs))
+                budget -= runs*cost
+                count -= runs
+                if is_hard(source): hard_left[source] -= runs
+                for ref in refs: planned[ref] = planned.get(ref,0)+runs
+                changed = True
         if not changed: break
         targets, next_waiting = active_targets(snapshot,observation,completed,rules,planned)
         for ref in next_waiting:
@@ -134,18 +177,19 @@ def weighted_plan(snapshot, observation, completed, rules=None, used=None, reser
     original, initial_waiting = active_targets(snapshot,observation,completed,rules,used or {})
     waiting.update(initial_waiting)
     for ref,target in original.items():
-        allowed = [s for s in data['items'][ref]['sources'] if s not in target.get('excluded',[])
-                   and (not rules.get(ref,{}).get('stage') or rules[ref]['stage']==s)]
+        allowed = allowed_sources(data,target,rules)
         if not any(s in available for s in allowed):
-            waiting[ref] = '没有已确认可扫的来源'
-            if any(s not in observation.get('stages',{}) for s in allowed): result['waiting_data'] = True
+            waiting[ref],unknown = unavailable_sources(allowed,states)
+            result['waiting_data'] |= unknown
         elif not any(ref in row['refs'] for row in output.values()) and ref not in waiting:
             waiting[ref] = '本次体力不足以分配次数' if not output else '本次按优先级未分配次数'
     result['waiting_data'] |= any(reason=='库存待同步' for reason in waiting.values())
     result['rows'] = list(output.values())
+    if any(is_hard(s) for s in output):
+        result['rows'].sort(key=lambda r:(-r['weight'],stage_order(r['stage_id'])))
     for row in result['rows']:
         limited = any(stock_limited(t) and t['enabled'] and t['ref'] in data['stages'][row['stage_id']]['drops']
-                      and t['ref']+'@'+t['version'] not in completed for t in snapshot['targets'])
+                      and not stock_complete(t,completed) for t in snapshot['targets'])
         row['batch_count'] = 1 if limited else min(5,row['count'])
     return result
 
@@ -165,7 +209,7 @@ def inventory_plan(snapshot, observation, completed, rules=None, used=None, rese
     targets, waiting = {}, {}
     for t in snapshot['targets']:
         ref = t['ref']
-        if not t['enabled'] or ref+'@'+t['version'] in completed: continue
+        if not t['enabled'] or stock_complete(t,completed): continue
         if type(inventory.get(ref)) is not int:
             waiting[ref] = '库存待同步'; continue
         gap = max(0,t['amount']-inventory[ref])

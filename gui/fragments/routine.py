@@ -7,8 +7,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QHeaderV
                             QListWidgetItem, QAbstractItemView, QTableWidgetItem)
 from qfluentwidgets import ScrollArea, CheckBox, SpinBox, PushButton, TableWidget, FlowLayout
 from core.routine_catalog import ROUTINES, parameter_summary, CLAIM_MODULES, default_routine
+from core.tasks import SWEEP_TASKS
 from core.config.default_config import default_events
-from core.config.repository import instance_params
+from core.config.repository import ConfigValidationError, instance_params
+from core.material_store import MaterialStore, TASK as MATERIAL_TASK, clean_targets, copy_targets
 from core.game_catalog import stage_options, characters, SHOP_ITEMS
 from core.mad_features import MAP_LOCATIONS
 from gui.widgets import TaskCard, CheckableListWidget
@@ -23,6 +25,7 @@ class SweepSelector(QWidget):
 
     def __init__(self, task, parent=None):
         super().__init__(parent)
+        self.task = task
         self.options = stage_options(task)
         self._order, self.rows, self.remaining = [], {}, {}
         self._loading = False
@@ -46,7 +49,9 @@ class SweepSelector(QWidget):
         self.add_button = PushButton('+ 添加关卡', self)
         self.add_button.clicked.connect(self.add_dialog)
         row.addWidget(self.add_button)
-        note = typography(QLabel('按列表顺序扫荡 · MAX 为当前可扫最大次数', self), 'caption')
+        hint = ('MAX 使用本关当前可扫次数，不购买次数或体力' if task == 'mad.hard_sweep'
+                else '按列表顺序扫荡 · MAX 为当前可扫最大次数')
+        note = typography(QLabel(hint, self), 'caption')
         note.setWordWrap(True)
         note.setToolTip('MAX 使用游戏当前允许的最大扫荡次数。保存计划会按现有进度续算剩余次数。')
         row.addWidget(note, 1)
@@ -119,7 +124,7 @@ class SweepSelector(QWidget):
 
     def add_dialog(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle('添加关卡')
+        dialog.setWindowTitle('添加 HARD 关卡' if self.task == 'mad.hard_sweep' else '添加关卡')
         dialog.resize(450, 510)
         layout = QVBoxLayout(dialog)
         group = QComboBox(dialog)
@@ -184,13 +189,13 @@ class TaskEditor:
             widget = typography(QLabel(text, card.body), 13)
             widget.setWordWrap(True)
             layout.addWidget(widget)
-        if task in ('mad.normal_sweep', 'mad.flara_sweep', 'mad.procurement_sweep'):
+        if task in SWEEP_TASKS:
             selector = SweepSelector(task, card.body)
             selector.changed.connect(self._changed)
             self.selector = selector
             layout.addWidget(selector)
         elif task == 'mad.material_sweep':
-            label('勾选素材并排序，按权重分配可用体力；可选库存达标停止，也可在领奖前后各放一条。')
+            label('这条指令单独选择和排序素材，按权重分配体力；可选库存达标停止。')
             row = QHBoxLayout()
             self.material_buttons = {}
             for title,action in [('选择素材与排序','goals'),('查看扫荡安排','plan'),('刷新游戏数据','sync')]:
@@ -431,12 +436,20 @@ class RoutineFragment(ScrollArea):
             for k in ('interval', 'daily_reset', 'disabled_time_range'):
                 event[k] = deepcopy(current[k])
         params = self.editors[source].value() if source else default_routine().get(task[4:], {})
-        key = uuid4().hex
+        if task==MATERIAL_TASK:
+            original = MaterialStore(self.repository).targets(source,params) if source and self.repository else params.get('targets',[])
+            params['targets'] = copy_targets(original) if source else []
         stem = ROUTINES[task].title
-        names = {e['event_name'] for e in self._queue}
-        number = 2
-        while f'{stem} {number}' in names: number += 1
-        event.update(instance_id=key, event_name=f'{stem} {number}', enabled=True)
+        if task == 'mad.hard_sweep' and not any(e['func_name'] == task for e in self._queue):
+            # Older queues have no base HARD row. A date-only addition stays removable.
+            key, name = (uuid4().hex if self.definition_mode else task), stem
+        else:
+            key = uuid4().hex
+            names = {e['event_name'] for e in self._queue}
+            number = 2
+            while f'{stem} {number}' in names: number += 1
+            name = f'{stem} {number}'
+        event.update(instance_id=key, event_name=name, enabled=True)
         self._loading = True
         self._queue.append(event)
         self._make_card(event)
@@ -446,6 +459,23 @@ class RoutineFragment(ScrollArea):
         self._reorder()
         self.open_settings(key)
         return key
+
+    def material_draft_destination(self, key):
+        if self.definition_mode: return '保存排期'
+        return None if any(e['instance_id']==key for e in self.base_events) else '保存更改'
+
+    def apply_material_targets(self, key, targets, previous):
+        if self._busy or key not in self.editors:
+            raise ConfigValidationError('当前指令只读，请在可编辑的指令中修改目标。')
+        if self.material_draft_destination(key):
+            saved = clean_targets(targets,previous)
+        else:
+            saved = MaterialStore(self.repository).save_targets(targets,instance=key,expected=previous)['targets']
+            # A dialog save must not apply unrelated queue drafts or reset a live clock.
+            instance_params(self.base_config,self._event(key))['targets'] = deepcopy(saved)
+        self.editors[key].base['targets'] = deepcopy(saved)
+        self._changed()
+        return saved
 
     def rename_instance(self, key, name):
         if self._busy or not name.strip(): return
@@ -693,7 +723,7 @@ class RoutineFragment(ScrollArea):
                     from core.material_store import MaterialStore
                     store=MaterialStore(self.repository)
                     round_=store.state()['rounds'].get(item['material_context'])
-                    if round_ and not store.needs_work(item['material_context'],item.get('material_allocation')):
+                    if round_ and not store.needs_work(item['material_context'],item.get('material_allocation'),item.get('instance_id')):
                         self._results[task]=('已完成','本次安排和库存条件已完成。')
         elif kind == 'state' and event.get('state') == 'starting':
             self._results.clear()

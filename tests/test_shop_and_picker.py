@@ -10,7 +10,7 @@ from module import gold_shop
 
 
 class PickerAndShopUI(TestCase):
-    def test_three_pickers_and_shop_roundtrip(self):
+    def test_sweep_pickers_and_shop_roundtrip(self):
         from main import create_window
         from PyQt5.QtCore import QTimer, Qt, QPoint
         from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QComboBox, QStyleOptionViewItem, QStyle
@@ -26,6 +26,7 @@ class PickerAndShopUI(TestCase):
             window.show()
             app.processEvents()
             try:
+                self.assertIn('mad.hard_sweep',page.sweep_selectors)
                 for task, selector in page.sweep_selectors.items():
                     with self.subTest(task=task):
                         old = selector.value()
@@ -59,6 +60,9 @@ class PickerAndShopUI(TestCase):
                                 QTest.keyClick(choices, Qt.Key_Space)
                                 self.assertEqual(item.checkState(), Qt.Checked)
                                 combo.setCurrentIndex(combo.count() - 1)
+                                if task=='mad.hard_sweep':
+                                    visible=[choices.item(i).text() for i in range(choices.count()) if not choices.item(i).isHidden()]
+                                    self.assertEqual(visible,[f'HARD 15-{n}' for n in range(1,5)])
                                 combo.setCurrentIndex(0)
                                 self.assertTrue(button.isEnabled())
                                 self.assertIn('2', button.text())

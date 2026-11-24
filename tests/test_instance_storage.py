@@ -79,6 +79,37 @@ class InstanceStorage(TestCase):
         self.assertEqual(reopened.load_config()['unfinished_tasks']['tail'],self.params['tail']['plans'])
         self.assertFalse(reopened.pending_path.exists())
 
+    def test_adding_hard_to_an_old_queue_preserves_progress_and_rejects_normal_ids(self):
+        from core.game_catalog import stage_options
+        from core.tasks import function_table
+        from module.hard_sweep import implement
+        hard='mad.hard_sweep'
+        catalog=stage_options(hard)
+        self.assertEqual({k:v['cost'] for k,v in catalog.items()},
+                         {f'hard:{z}-{n}':20 for z in range(1,16) for n in range(1,5)})
+        self.assertIs(function_table()[hard],implement)
+        base=next(e for e in self.events if e['func_name']==hard)
+        self.assertFalse(base['enabled']); self.assertEqual(self.params.pop(hard),{'plans':[]})
+        events=[e for e in self.events if e is not base]
+        self.repo.complete_sweep(self.normal,self.stage,1)
+        old=self.repo.load_config(); old['routine'].pop('hard_sweep'); old['unfinished_tasks'].pop(hard)
+        atomic_json(self.repo.config_path,old); atomic_json(self.repo.event_path,events)
+        self.assertEqual(self.repo.load_events(),events)
+        self.assertEqual(self.repo.load_config()['unfinished_tasks'],old['unfinished_tasks'])
+        self.assertEqual(json.loads(self.repo.config_path.read_text('utf-8')),old)
+        plans=[{'stage_id':'hard:5-1','count':2}]
+        self.params.update({hard:{'plans':plans},'tail':{'plans':plans}})
+        events+= [base,dict(base,instance_id='tail',event_name='尾扫')]
+        self.repo.save_routine_instances(events,self.params)
+        self.repo.complete_sweep(hard,'hard:5-1',1)
+        saved=ProfileRepository(self.repo.profile_dir).load_config()
+        self.assertEqual(saved['unfinished_tasks'],dict(old['unfinished_tasks'],**{
+            hard:[{'stage_id':'hard:5-1','count':1}],'tail':plans}))
+        for bad in ('normal:5-1','hard:5-5'):
+            with self.assertRaisesRegex(ConfigValidationError,'HARD'):
+                self.repo.patch_config({'routine':{'hard_sweep':{'plans':[{'stage_id':bad,'count':1}]}}})
+        self.assertEqual(self.repo.load_config(),saved)
+
     def test_validate_copies_and_follow_targets_before_saving(self):
         self.duplicate()
         self.events[-1]['follow_after']='mad.claim_all'

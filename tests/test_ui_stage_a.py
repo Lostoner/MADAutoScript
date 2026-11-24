@@ -180,11 +180,11 @@ class DailyWorkspaceStageA(TestCase):
         self.assertEqual(store.record(day)['status'], 'needs_review')
         self.assertEqual(self.w.worker.last_result['device_actions'], 0)
 
-    def test_later_material_completion_clears_stale_partial_without_editing_receipts(self):
+    def test_observed_material_completion_clears_stale_partial_without_editing_receipts(self):
         from core.material_store import MaterialStore, TASK
         store = MaterialStore(self.repo)
         store.save_targets([{'ref':'item:80201', 'amount':20}])
-        snapshot = store.freeze('sample-round')
+        snapshot = store.for_step(store.freeze('sample-round'),TASK)
         store.observe({'inventory':{'item:80201':20}, 'source':'game', 'at':1}, snapshot)
         tasks = [{'task_id':TASK, 'instance_id':TASK, 'event_name':'首扫',
                   'status':'PARTIAL', 'material_context':'sample-round', 'reason':'当时尚未达标'},

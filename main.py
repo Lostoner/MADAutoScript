@@ -43,10 +43,10 @@ class Main:
             self.worker.request_stop()
             self.worker.join()
         if self.ocr_client: self.ocr_client.stop_server(); self.ocr_client=None
-    def sync_materials(self):
+    def sync_materials(self,snapshot=None):
         from core.Mad_thread import MadThread
         if self.worker and self.worker.is_running: return False
-        self.worker=MadThread(self.repository,self.emit,self,material_sync=True)
+        self.worker=MadThread(self.repository,self.emit,self,material_sync=True,material_snapshot=snapshot)
         return self.worker.start_tasks()
 
 def repository(root): return ProfileRepository(Path(root)/'config/default')

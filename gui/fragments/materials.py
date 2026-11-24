@@ -1,4 +1,4 @@
-"""One shared target list and a read-only derived plan, with explicit overrides."""
+"""Edit one instruction's goals and inspect its derived sweep plan."""
 from copy import deepcopy
 from datetime import datetime
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QMimeData
@@ -7,13 +7,19 @@ from PyQt5.QtWidgets import (QDialog, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                             QComboBox, QTableWidgetItem, QAbstractItemView,
                             QInputDialog, QMessageBox, QDialogButtonBox, QListWidgetItem, QToolButton, QMenu, QAction)
 from qfluentwidgets import PushButton, PrimaryPushButton, SpinBox, CheckBox, TableWidget
+from core.game_catalog import HARD_DAILY_LIMIT
 from core.material_store import MaterialStore
-from core.material_planner import catalog, plan, stock_limited
+from core.material_planner import catalog, plan, stock_complete, stock_limited
 from core.plan_store import PlanStore
 from gui.theme import typography, apply_typography
 from gui.widgets import CheckableListWidget
 from gui.material_picker import MaterialPicker, material_icon, material_tooltip
 from gui.selection_thumbnails import decorate_item, prepare_thumbnail_combo, add_thumbnail_choice
+
+
+def stage_label(stage_id):
+    difficulty, _, number = stage_id.partition(':')
+    return f'{difficulty.upper()} {number}' if difficulty in ('normal','hard') else stage_id
 
 
 class MaterialTable(TableWidget):
@@ -54,26 +60,34 @@ class MaterialTable(TableWidget):
 
 
 class MaterialDialog(QDialog):
-    syncRequested = pyqtSignal()
+    syncRequested = pyqtSignal(dict)
     stopRequested = pyqtSignal()
 
-    def __init__(self, repository, theme, instance, reserve=0, scope='routine', parent=None, *, instance_name=None):
+    def __init__(self, repository, theme, instance, reserve=0, scope='routine', parent=None, *,
+                 instance_name=None, params=None, apply_targets=None, draft_destination=None, read_only=False):
         super().__init__(parent)
         self.store, self.theme = MaterialStore(repository), theme
         self.instance, self.reserve, self.scope = instance, reserve, scope
         self.instance_name = instance_name or next((e['event_name'] for e in repository.load_events() if e['instance_id']==instance),instance)
         self.data = catalog()
-        self.base = self.store.definitions()
+        self.apply_targets, self.draft_destination, self.read_only = apply_targets, draft_destination, read_only
+        self.base = self.store.definitions(instance,params=params,scope=scope)
+        if read_only:
+            frozen = self.store.state()['rounds'].get(scope)
+            if frozen: self.base = {'targets':self.store.for_step(frozen['snapshot'],instance)['targets']}
         self.targets = deepcopy(self.base['targets'])
         self._busy = False
         self._picker_filter = ('voucher',2)
-        self.setWindowTitle('素材扫荡 · 共享本配置')
+        self.setWindowTitle('素材目标 · '+self.instance_name)
         self.resize(1060,730)
         self.setMinimumSize(760,540)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(22,18,22,18); outer.setSpacing(12)
-        outer.addWidget(typography(QLabel('勾选素材，按优先级分配次数'),22,True))
-        self.note = QLabel('先选的优先；拖动行或上移／下移调整。库存达标停止可单独开启，保存不启动游戏。')
+        outer.addWidget(typography(QLabel(self.instance_name+' · 素材目标'),22,True))
+        note = ('此日已锁定，仅可查看原目标和安排。' if read_only else
+                '仅设置这条指令。先选的优先，可拖动排序；库存达标停止按素材开启。')
+        if draft_destination and not read_only: note += ' 应用后，点击「'+draft_destination+'」生效。'
+        self.note = QLabel(note)
         self.note.setWordWrap(True); outer.addWidget(self.note)
         self.tabs = QTabWidget(self); outer.addWidget(self.tabs,1)
         self.goals_page = QWidget(); goals = QVBoxLayout(self.goals_page)
@@ -125,7 +139,7 @@ class MaterialDialog(QDialog):
         self.reset_rule = PushButton('恢复自动'); rules.addWidget(self.reset_rule)
         rules.addStretch()
         planning.addLayout(rules)
-        hint = QLabel('调低次数后不会从其他关卡补回。指定来源和次数仅用于本轮；永久排除请在共享目标中设置。')
+        hint = QLabel('调低次数后不会补回。指定来源和次数仅用于本轮；永久排除在本条指令的素材目标中设置。')
         hint.setWordWrap(True); planning.addWidget(hint)
         self.tabs.addTab(self.plan_page,'扫荡安排')
         footer = QHBoxLayout()
@@ -133,7 +147,7 @@ class MaterialDialog(QDialog):
         self.review = PushButton('核对上批结果'); footer.addWidget(self.review)
         self.stop_button = PushButton('停止任务'); self.stop_button.hide(); footer.addWidget(self.stop_button)
         self.sync_button = PushButton('同步游戏数据'); footer.addWidget(self.sync_button)
-        self.save_button = PrimaryPushButton('保存并应用'); footer.addWidget(self.save_button)
+        self.save_button = PrimaryPushButton('应用到草稿' if draft_destination else '保存并应用'); footer.addWidget(self.save_button)
         outer.addLayout(footer)
         self.add.clicked.connect(self.add_dialog); self.remove.clicked.connect(self.remove_target)
         self.up.clicked.connect(lambda:self.move_target(self.table.currentRow(),self.table.currentRow()-1))
@@ -151,6 +165,7 @@ class MaterialDialog(QDialog):
         self.review.clicked.connect(self.resolve_pending)
         self.stop_button.clicked.connect(self.stopRequested)
         self.render_targets(); self.refresh_preview()
+        self.set_busy(False)
         theme.changed.connect(self.apply_theme)
         self.apply_theme()
 
@@ -217,7 +232,7 @@ class MaterialDialog(QDialog):
             condition.setAccessibleName(item['name']+'达到库存后停止')
             self.table.setCellWidget(row,5,condition)
             condition.toggled.connect(self.update_stock_controls)
-            done = self.store.token(t) in state['completed'] if t.get('version') else False
+            done = stock_complete(t,state['completed'])
             status = '已暂停' if not t.get('enabled',True) else '按次数分配' if not stock_limited(t) else '重新开启' if t.get('reopen') else '已达成' if done else '待达标'
             self.table.setItem(row,6,QTableWidgetItem(status))
             self.table.setRowHeight(row,48)
@@ -242,7 +257,7 @@ class MaterialDialog(QDialog):
             owned=obs.get('inventory',{}).get(target['ref'])
             self.table.item(row,2).setText(('待同步' if owned is None else str(owned)) if enabled else '不读取')
             self.table.item(row,4).setText(str(max(0,amount-owned)) if enabled and owned is not None and amount else '—')
-            done=bool(target.get('version') and self.store.token(target) in completed and amount==target.get('amount'))
+            done=stock_complete(target,completed) and amount==target.get('amount')
             status=('已暂停' if not self.table.cellWidget(row,0).isChecked() else '按次数分配' if not enabled else
                     '待设置数量' if not amount else '重新开启' if target.get('reopen') else '已达成' if done else '待达标')
             self.table.item(row,6).setText(status)
@@ -317,7 +332,7 @@ class MaterialDialog(QDialog):
         layout = QVBoxLayout(dialog); choices = CheckableListWidget(dialog); layout.addWidget(choices)
         choices.setIconSize(QSize(40,40))
         for stage in self.data['items'][target['ref']]['sources']:
-            item = QListWidgetItem(stage.replace('normal:','NORMAL '),choices); item.setData(Qt.UserRole,stage)
+            item = QListWidgetItem(stage_label(stage),choices); item.setData(Qt.UserRole,stage)
             decorate_item(item,'stages',stage); item.setSizeHint(QSize(0,48))
             item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsSelectable)
             item.setCheckState(Qt.Checked if stage in target.get('excluded',[]) else Qt.Unchecked)
@@ -328,11 +343,16 @@ class MaterialDialog(QDialog):
             self.feedback.setText('排除列表已修改，保存目标后生效。')
 
     def save_targets(self):
-        if self._busy: return False
-        try: self.base = self.store.save_targets(self.values(),self.base['revision'])
+        if self._busy or self.read_only: return False
+        try:
+            if self.apply_targets:
+                self.base = {'targets':self.apply_targets(self.values(),self.base['targets'])}
+            else:
+                self.base = self.store.save_targets(self.values(),instance=self.instance,expected=self.base['targets'])
         except (ValueError,OSError) as exc: self.feedback.setText(str(exc)); return False
         self.targets = deepcopy(self.base['targets']); self.render_targets(); self.refresh_preview()
-        self.feedback.setText('已保存并应用。'+('本轮已冻结，修改用于后续轮次。' if self.store.active_context(self.scope) else ''))
+        self.feedback.setText(f'已应用到草稿，请点击「{self.draft_destination}」。' if self.draft_destination else
+            '已保存此指令的目标。'+('本轮已冻结，修改用于后续轮次。' if self.store.active_context(self.scope) else ''))
         return True
 
     def load_rule(self):
@@ -340,7 +360,7 @@ class MaterialDialog(QDialog):
         self.rule_stage.clear(); self.rule_stage.addItem('自动选择来源',None)
         if not ref: return
         for stage in self.data['items'][ref]['sources']:
-            add_thumbnail_choice(self.rule_stage,'stages',stage,stage.replace('normal:','NORMAL '))
+            add_thumbnail_choice(self.rule_stage,'stages',stage,stage_label(stage))
         context = self.store.active_context(self.scope)
         state = self.store.state()
         rules = (state['rounds'][context]['snapshot']['rules'].get(self.instance,{}) if context
@@ -351,7 +371,7 @@ class MaterialDialog(QDialog):
 
     def save_rule(self, reset=False):
         ref = self.rule_target.currentData()
-        if not ref or self._busy: return
+        if not ref or self._busy or self.read_only: return
         rules = self.store.adjustments(self.scope,self.instance)
         if reset: rules.pop(ref,None)
         else: rules[ref] = {'stage':self.rule_stage.currentData(),'max_runs':None if self.rule_cap.value()<0 else self.rule_cap.value()}
@@ -361,18 +381,25 @@ class MaterialDialog(QDialog):
 
     def clear_rule(self): self.save_rule(reset=True)
 
+    def goal_snapshot(self):
+        return {'targets':deepcopy(self.base['targets']),'catalog_version':self.data['version'],
+                'allocation_version':2,'rules':{}}
+
     def refresh_preview(self):
         state = self.store.state(); context = self.store.active_context(self.scope)
         frozen = state['rounds'].get(context)
-        snapshot = frozen['snapshot'] if frozen else {'targets':self.store.definitions()['targets'],'catalog_version':self.data['version'],'allocation_version':2}
+        snapshot = self.store.for_step(frozen['snapshot'],self.instance) if frozen else self.goal_snapshot()
         rules = snapshot.get('rules',{}).get(self.instance,{}) if frozen else self.store.adjustments(self.scope,self.instance)
         used = frozen['used'].get(self.instance,{}) if frozen else {}
         observation = self.store.preview_observation()
         future = self.scope.startswith('plan:') and self.scope[5:] != PlanStore(self.store.repository).today()
         if future: observation['balance'] = None
         self.context.setText((self.scope[5:] if self.scope.startswith('plan:') else '本轮普通日常')+' · '+self.instance_name+
-            (' · 已冻结，按本轮目标与规则显示' if frozen else ' · 保存目标默认应用')+
+            (' · 已冻结，按本轮目标与规则显示' if frozen else ' · 只看这条指令的安排')+
             ('\n未来日期不预分配今天的体力；执行时生成安排。' if future else '\n权重按素材顺序计算，同关取最高；未开启库存条件时不看掉落数量。'))
+        if any(t['enabled'] and self.data['items'][t['ref']]['category']=='memory' for t in snapshot['targets']):
+            self.context.setText(self.context.text()+
+                f'\nHARD 每关每日最多 {HARD_DAILY_LIMIT} 次，与困难扫荡共用；执行前复查游戏剩余次数。')
         self.context.setToolTip('指令编号：'+self.instance)
         table = plan(snapshot,observation,state['completed'],rules,used,self.reserve)
         records=[a for a in frozen.get('allocations',{}).values() if a['instance']==self.instance] if frozen else []
@@ -393,7 +420,7 @@ class MaterialDialog(QDialog):
         for i,row in enumerate(table['rows']):
             names = '、'.join(self.data['items'][r]['name'] for r in row['refs'])
             done=allocation['by_stage'].get(row['stage_id'],0) if allocation else 0
-            for j,value in enumerate([row['stage_id'].replace('normal:','NORMAL '),names,row.get('weight','—'),row['count']+done,
+            for j,value in enumerate([stage_label(row['stage_id']),names,row.get('weight','—'),row['count']+done,
                                       f'{done} / {row["count"]}',row['cost'],'手动' if row['manual'] else '自动']):
                 item = QTableWidgetItem(str(value)); item.setToolTip(names+'\n'+row['reason'])
                 if j==0: decorate_item(item,'stages',row['stage_id'])
@@ -404,16 +431,19 @@ class MaterialDialog(QDialog):
                             ('当前没有待安排次数。' if not table['rows'] else '实际扫荡次数以结算为准；不根据掉落数量重分配。'))
         self.waiting.setToolTip('\n'.join(waiting))
         for control in (self.rule_target,self.rule_stage,self.rule_cap,self.apply_rule,self.reset_rule):
-            control.setEnabled(not frozen and not self._busy)
+            control.setEnabled(not frozen and not self._busy and not self.read_only)
 
     def request_sync(self):
-        if self.save_targets(): self.syncRequested.emit()
+        if self.save_targets(): self.syncRequested.emit(self.goal_snapshot())
 
     def set_busy(self, busy):
         self._busy = busy
         self.stop_button.setVisible(busy)
-        for control in (self.table,self.add,self.remove,self.up,self.down,self.more,self.save_button,self.sync_button,self.review):
-            control.setEnabled(not busy)
+        for control in (self.table,self.add,self.remove,self.up,self.down,self.more,self.save_button,self.sync_button):
+            control.setEnabled(not busy and not self.read_only)
+        self.review.setEnabled(not busy)
+        self.save_button.setVisible(not self.read_only)
+        self.sync_button.setVisible(not self.read_only)
         self.refresh_preview()
         if busy: self.feedback.setText('任务运行中，目标与调整暂时只读。')
 
@@ -438,7 +468,8 @@ class MaterialDialog(QDialog):
         self.feedback.setText('核对结果已保存，后续执行按原配额和已开启的库存条件恢复。'); self.refreshed()
 
     def reject(self):
-        if self.values()!=self.base['targets']:
-            answer = QMessageBox.question(self,'未保存的素材目标','保存目标后关闭？',QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,QMessageBox.Save)
+        if not self.read_only and self.values()!=self.base['targets']:
+            prompt = '应用目标到草稿后关闭？' if self.draft_destination else '保存这条指令的目标后关闭？'
+            answer = QMessageBox.question(self,'未保存的素材目标',prompt,QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,QMessageBox.Save)
             if answer==QMessageBox.Cancel or (answer==QMessageBox.Save and not self.save_targets()): return
         super().reject()

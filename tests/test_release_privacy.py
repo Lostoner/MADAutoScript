@@ -13,6 +13,7 @@ class ReleasePrivacyTests(unittest.TestCase):
         definitions = {'game_version': 'test', 'sweep': {}, 'normal_zones': {}, 'characters': []}
         local = dict(definitions, source='capture', zone_evidence='local', roster_evidence='local')
         self.assertEqual(public_catalog(local), definitions)
+        self.assertEqual(public_catalog(dict(local,hard_zones={'1':4})),dict(definitions,hard_zones={'1':4}))
         self.assertIn('zone_evidence', local)
 
     def test_private_paths_detected_in_serialized_and_binary_files(self):

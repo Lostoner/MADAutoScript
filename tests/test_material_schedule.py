@@ -6,7 +6,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from core.Mad_thread import MadThread
-from core.material_store import MaterialStore, TASK
+from core.material_store import MaterialStore, TASK, copy_targets
 from core.routine_checkpoint import RoutineCheckpoint
 from module.material_sweep import execute
 from module import sweep_utils as sweep
@@ -45,7 +45,7 @@ class MaterialPlanExecution(TestCase):
 
     def prepare(self,limited=False):
         if limited: self.snapshot['targets'][0].update(stock_limit_enabled=True,amount=50)
-        self.materials.save_targets(self.snapshot['targets'])
+        self.spec['params_by_id'][TASK]['targets']=copy_targets(self.snapshot['targets'])
         self.schedule([TASK,'mad.mail'])
 
     def test_only_remaining_resumes_exact_debt_and_does_not_repeat_mail(self):

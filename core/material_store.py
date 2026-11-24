@@ -1,15 +1,55 @@
-"""Per-profile material intent and atomic observation/batch receipts."""
+"""Material goals in instruction params; shared observations and atomic receipts."""
 from copy import deepcopy
 import json
 import time
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
-from core.config.repository import lock, ConfigValidationError, RevisionConflictError
+from core.config.repository import lock, ConfigValidationError, RevisionConflictError, instance_params
 from core.runtime_state import atomic_json
-from core.material_planner import stock_limited
+from core.material_planner import stock_complete, stock_limited
 
 TASK = 'mad.material_sweep'
 MANUAL_PREVIEW_TTL = 30*60
+
+def validate_targets(targets, *, saved=False):
+    from core.material_planner import catalog
+    if not isinstance(targets,list): raise ConfigValidationError('素材目标须为列表。')
+    items, seen = catalog()['items'], set()
+    for draft in targets:
+        ref, amount = draft['ref'], draft.get('amount')
+        limited = draft.get('stock_limit_enabled', amount is not None)
+        if ref not in items or ref in seen:
+            raise ConfigValidationError('请选择已适配素材，每种素材只设置一个目标。')
+        if (limited or amount is not None) and (type(amount) is not int or not 1 <= amount <= 2147483647):
+            raise ConfigValidationError('目标库存须为正整数。')
+        if set(draft.get('excluded',[]))-set(items[ref]['sources']):
+            raise ConfigValidationError('排除列表包含非来源关卡。')
+        if saved and (not isinstance(draft.get('version'),str) or not draft['version']):
+            raise ConfigValidationError('素材目标缺少版本，请在目标编辑器重新保存。')
+        seen.add(ref)
+
+def clean_targets(targets, previous):
+    validate_targets(targets)
+    previous = {t['ref']:t for t in previous}
+    result = []
+    for draft in targets:
+        ref, amount = draft['ref'], draft.get('amount')
+        before = previous.get(ref,{})
+        same = before.get('version') and before.get('amount')==amount and not draft.get('reopen')
+        target = dict(ref=ref, amount=amount, version=before['version'] if same else uuid4().hex,
+                      enabled=bool(draft.get('enabled',True)),
+                      stock_limit_enabled=bool(draft.get('stock_limit_enabled',amount is not None)),
+                      excluded=list(dict.fromkeys(draft.get('excluded',[]))))
+        if same and before.get('legacy_version'): target['legacy_version'] = before['legacy_version']
+        result.append(target)
+    return result
+
+def copy_targets(targets):
+    # Copy intent only, not the source instruction's sticky stock completion.
+    return clean_targets(targets,[])
+
+def material_params(events, params_by_id):
+    return {e['instance_id']:params_by_id[e['instance_id']] for e in events if e['func_name']==TASK}
 
 
 class MaterialStore:
@@ -18,18 +58,53 @@ class MaterialStore:
         self.path = repository.profile_dir/'material-goals.json'
         self.state_path = repository.data_root/'state'/repository.profile_id/'material-state.json'
 
-    def definitions(self):
+    def _legacy_targets(self):
+        if not self.path.exists(): return []
+        value = json.loads(self.path.read_text('utf-8'))
+        version = value.get('schema_version',1)
+        if version not in (1,2): raise ConfigValidationError('素材配置版本较新，请使用对应新版程序。')
+        targets = value['targets']
+        if version==1:
+            targets.sort(key=lambda t:-t.get('priority',1))
+            for target in targets:
+                target['stock_limit_enabled'] = True
+                target.pop('priority',None)
+        return targets
+
+    def targets(self, instance, params, scope='routine'):
+        if 'targets' in params: return deepcopy(params['targets'])  # [] is intentional
+        # The old file becomes read-only. Give each inherited goal an independent
+        # identity without rewriting historical completions or frozen snapshots.
+        inherited = self._legacy_targets()
+        for target in inherited:
+            old = target['legacy_version'] = target['version']
+            target['version'] = uuid5(NAMESPACE_URL,json.dumps(['mad-material',scope,instance,old])).hex
+        return inherited
+
+    def definitions(self, instance=TASK, *, params=None, scope='routine'):
         with lock:
-            value = json.loads(self.path.read_text('utf-8')) if self.path.exists() else {'revision':0,'targets':[]}
-            version = value.get('schema_version',1)
-            if version not in (1,2): raise ConfigValidationError('素材配置版本较新，请使用对应新版程序。')
-            if version == 1:
-                value['targets'].sort(key=lambda t:-t.get('priority',1))
-                for target in value['targets']:
-                    target['stock_limit_enabled'] = True
-                    target.pop('priority',None)
-            value['schema_version'] = 2
-            return value
+            if params is None:
+                config = self.repository.load_config()
+                params = (config['routine']['material_sweep'] if instance==TASK
+                          else config['instance_params'][instance])
+            return {'targets':self.targets(instance,params,scope)}
+
+    @staticmethod
+    def for_step(snapshot, instance):
+        if 'targets_by_id' not in snapshot: return snapshot  # old frozen round
+        return {k:v for k,v in snapshot.items() if k!='targets_by_id'} | {
+            'targets':snapshot['targets_by_id'].get(instance,[])}
+
+    def copy_definition(self, spec, scope='routine'):
+        """Copy a day/template, including the actual goals of a frozen source day."""
+        result = deepcopy(spec)
+        params = material_params(result['events'],result['params_by_id'])
+        frozen = self.state()['rounds'].get(scope) if params and scope.startswith('plan:') else None
+        for instance, config in params.items():
+            targets = (self.for_step(frozen['snapshot'],instance)['targets'] if frozen
+                       else self.targets(instance,config,scope))
+            config['targets'] = copy_targets(targets)
+        return result
 
     def state(self):
         with lock:
@@ -40,39 +115,21 @@ class MaterialStore:
     def token(target):
         return target['ref']+'@'+target['version']
 
-    def save_targets(self, targets, revision=None):
-        from core.material_planner import catalog
-        data = catalog()
+    def save_targets(self, targets, *, instance=TASK, expected=None):
+        """Save one existing daily instruction, leaving other drafts and progress alone."""
         with lock:
-            old = self.definitions()
-            if revision is not None and old['revision'] != revision:
+            event = next((e for e in self.repository.load_events() if e['instance_id']==instance),None)
+            if not event or event['func_name']!=TASK: raise ConfigValidationError('素材指令已移除，请重新打开。')
+            old = self.definitions(instance)['targets']
+            if expected is not None and old != expected:
                 raise RevisionConflictError('素材目标已更新，请重新打开后编辑。')
-            previous = {t['ref']:t for t in old['targets']}
-            result, seen = [], set()
-            for draft in targets:
-                ref, amount = draft['ref'], draft.get('amount')
-                limited = draft.get('stock_limit_enabled', amount is not None)
-                if ref not in data['items'] or ref in seen:
-                    raise ConfigValidationError('请选择已适配素材，每种素材只设置一个目标。')
-                if (limited or amount is not None) and (type(amount) is not int or not 1 <= amount <= 2147483647):
-                    raise ConfigValidationError('目标库存须为正整数。')
-                seen.add(ref)
-                before = previous.get(ref,{})
-                version = before.get('version')
-                if not version or before.get('amount') != amount or draft.get('reopen'):
-                    version = uuid4().hex
-                excluded = list(dict.fromkeys(draft.get('excluded',[])))
-                if set(excluded)-set(data['items'][ref]['sources']):
-                    raise ConfigValidationError('排除列表包含非来源关卡。')
-                result.append(dict(ref=ref, amount=amount, version=version, enabled=bool(draft.get('enabled',True)),
-                                   stock_limit_enabled=bool(limited), excluded=excluded))
-            value = {'schema_version':2,'revision':old['revision']+1,'targets':result}
-            if self.path.exists():
-                raw = json.loads(self.path.read_text('utf-8'))
-                backup = self.path.with_name('material-goals.v1.backup.json')
-                if raw.get('schema_version',1)==1 and not backup.exists(): atomic_json(backup,raw)
-            atomic_json(self.path,value)
-            return deepcopy(value)
+            result = clean_targets(targets,old)
+            config = self.repository.load_config()
+            if instance_params(config,event).get('targets')!=result:
+                change = {'targets':result}
+                self.repository.patch_config({'routine':{'material_sweep':change}} if instance==TASK
+                                             else {'instance_params':{instance:change}})
+            return {'targets':result}
 
     def active_context(self, scope='routine'):
         if scope.startswith('plan:'):
@@ -106,12 +163,17 @@ class MaterialStore:
             state['adjustments'].setdefault(scope,{})[instance] = clean
             atomic_json(self.state_path,state)
 
-    def freeze(self, context, scope='routine'):
+    def freeze(self, context, scope='routine', *, params_by_id=None):
         from core.material_planner import catalog
         with lock:
             state = self.state()
             if context not in state['rounds']:
-                snapshot = {'targets':self.definitions()['targets'],'catalog_version':catalog()['version'],'allocation_version':2,
+                if params_by_id is None:
+                    config = self.repository.load_config()
+                    params_by_id = {e['instance_id']:instance_params(config,e) for e in self.repository.load_events()
+                                    if e['func_name']==TASK}
+                snapshot = {'targets_by_id':{key:self.targets(key,p,scope) for key,p in params_by_id.items()},
+                            'catalog_version':catalog()['version'],'allocation_version':2,
                             'rules':deepcopy(state['adjustments'].get(scope,{}))}
                 state['rounds'][context] = {'snapshot':snapshot,'used':{},'blocked':[], 'receipts':[]}
                 if scope == 'routine': state['adjustments'].pop(scope,None)
@@ -122,21 +184,26 @@ class MaterialStore:
         state = self.state()
         return [t for t in snapshot['targets'] if t['enabled'] and
                 (not snapshot.get('inventory_only') or stock_limited(t)) and
-                (not stock_limited(t) or self.token(t) not in state['completed'])]
+                (not stock_limited(t) or not stock_complete(t,state['completed']))]
 
-    def needs_work(self, context, allocation_id=None):
+    def needs_work(self, context, allocation_id=None, instance=None):
         """Finite step debt and optional stock goals, never an endless checkbox."""
         state = self.state(); round_ = state['rounds'].get(context)
         if not round_: return False
         snapshot = round_['snapshot']
-        if snapshot.get('allocation_version') != 2: return bool(self.remaining(snapshot))
+        if snapshot.get('allocation_version') != 2: return bool(self.remaining(self.for_step(snapshot,instance)))
         if state['pending'] and state['pending']['phase']=='confirming': return True
         allocations = round_.get('allocations',{})
-        records = [allocations[allocation_id]] if allocation_id in allocations else ([] if allocation_id else allocations.values())
-        if allocation_id in allocations and allocations[allocation_id]['instance'] in round_['blocked']: return False
+        if allocation_id in allocations: instance = allocations[allocation_id]['instance']
+        if instance in round_['blocked'] and (allocation_id in allocations or 'targets_by_id' in snapshot): return False
+        records = ([allocations[allocation_id]] if allocation_id in allocations else
+                   [] if allocation_id else [a for a in allocations.values() if instance is None or a['instance']==instance])
         records = [a for a in records if a['instance'] not in round_['blocked']]
         if any(a.get('waiting_data') or any(r['count']>0 for r in a['rows']) for a in records): return True
-        return any(stock_limited(t) for t in self.remaining(snapshot))
+        if instance is None and 'targets_by_id' in snapshot:
+            return any(stock_limited(t) for key in snapshot['targets_by_id'] if key not in round_['blocked']
+                       for t in self.remaining(self.for_step(snapshot,key)))
+        return any(stock_limited(t) for t in self.remaining(self.for_step(snapshot,instance)))
 
     def allocation(self, context, key):
         return deepcopy(self.state()['rounds'][context].get('allocations',{}).get(key))
@@ -234,7 +301,7 @@ class MaterialStore:
             used = round_['used'].setdefault(pending['instance'],{})
             for ref in pending['refs']: used[ref] = used.get(ref,0)+pending['count']
             round_['receipts'].append(deepcopy(pending))
-            self._observe(state,observation,round_['snapshot'])
+            self._observe(state,observation,self.for_step(round_['snapshot'],pending['instance']))
             state['pending'] = None
             atomic_json(self.state_path,state)
             return True

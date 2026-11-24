@@ -58,7 +58,7 @@ class MaterialUI(TestCase):
         self.assertEqual(self.dialog.store.adjustments('routine',TASK)[A]['max_runs'],2)
         page=self.window.routineInterface
         copy=page.add_instance(TASK)
-        self.assertEqual(page.editors[copy].value(),{'reserve':0})
+        self.assertEqual(page.editors[copy].value(),{'reserve':0,'targets':[]})
         self.assertTrue(page.save_changes())
         self.assertEqual(self.dialog.store.adjustments('routine',copy),{})
         self.dialog.set_busy(True)
@@ -66,7 +66,7 @@ class MaterialUI(TestCase):
 
     def test_pending_is_visible_and_future_view_does_not_allocate_today_stamina(self):
         self.dialog.add_target(A,50); self.dialog.save_targets()
-        store=self.dialog.store; snap=store.freeze('round')
+        store=self.dialog.store; snap=store.for_step(store.freeze('round'),TASK)
         store.prepare_batch('round',TASK,'normal:4-1',1,[A])
         self.dialog.refreshed();self.assertFalse(self.dialog.review.isHidden())
         store.resolve_pending(False)
@@ -86,6 +86,89 @@ class MaterialUI(TestCase):
         QTimer.singleShot(0,check_dialog)
         self.window.routineInterface.materialRequested.emit(TASK,'plan')
         self.assertIsNone(self.window.worker)
+
+    def test_daily_dialog_saves_only_one_card_and_copy_is_independent(self):
+        from core.config.repository import ProfileRepository
+        page=self.window.routineInterface; page.editors[TASK].material_reserve.setValue(20)
+        def edit_front(dialog):
+            self.assertIn('素材扫荡',dialog.windowTitle())
+            dialog.add_target(A,50)
+            dialog.save_button.click()
+            self.assertIn('已保存此指令',dialog.feedback.text())
+            return 0
+        with patch.object(MaterialDialog,'exec_',new=edit_front):
+            self.window._show_materials('routine',TASK,'goals')
+        self.assertEqual(self.repo.load_config()['routine']['material_sweep']['reserve'],0)
+        self.assertTrue(page.has_unsaved_changes())
+        first=MaterialStore(self.repo).definitions()['targets'][0]
+        copy=page.add_instance(TASK,TASK)
+        inherited=page.editors[copy].value()['targets'][0]
+        self.assertEqual((inherited['ref'],inherited['amount']),(A,50))
+        self.assertNotEqual(inherited['version'],first['version'])
+        blank=page.add_instance(TASK)
+        self.assertEqual(page.editors[blank].value()['targets'],[])
+        def edit_tail(dialog):
+            self.assertIn('应用到草稿',dialog.save_button.text())
+            dialog.table.selectRow(0); dialog.remove_target(); dialog.add_target('item:29')
+            self.assertTrue(dialog.save_targets())
+            self.assertIn('保存更改',dialog.feedback.text())
+            return 0
+        with patch.object(MaterialDialog,'exec_',new=edit_tail):
+            self.window._show_materials('routine',copy,'goals')
+        self.assertNotIn(copy,self.repo.load_config()['instance_params'])
+        self.assertTrue(page.save_changes())
+        reopened=MaterialStore(ProfileRepository(self.repo.profile_dir))
+        self.assertEqual(reopened.definitions()['targets'],[first])
+        self.assertEqual([t['ref'] for t in reopened.definitions(copy)['targets']],['item:29'])
+        self.assertEqual(reopened.definitions(blank)['targets'],[])
+        def sync_tail(dialog):
+            dialog.request_sync()
+            return 0
+        with patch.object(MaterialDialog,'exec_',new=sync_tail),patch.object(self.window,'_sync_materials') as sync:
+            self.window._show_materials('routine',copy,'plan')
+        snapshot,=sync.call_args.args
+        self.assertEqual([t['ref'] for t in snapshot['targets']],['item:29'])
+
+    def test_plan_dialog_edits_one_day_and_frozen_day_keeps_its_goals(self):
+        from PyQt5.QtWidgets import QDialog
+        from gui.fragments.plan import shift
+        material=MaterialStore(self.repo); material.save_targets([{'ref':A}])
+        with patch.object(QDialog,'exec_',return_value=0): self.window._show_plan()
+        plan_page=self.window.plan_page; plan_page.use_daily()
+        today=plan_page.day; other=shift(today,1)
+        before=self.repo.load_config()
+        def choose(ref):
+            def edit(dialog):
+                self.assertEqual(dialog.base['targets'][0]['ref'],A)
+                dialog.table.selectRow(0); dialog.remove_target(); dialog.add_target(ref)
+                self.assertTrue(dialog.save_targets())
+                self.assertIn('保存排期',dialog.feedback.text())
+                return 0
+            return edit
+        plan_page.copy_to(today,[other])
+        with patch.object(MaterialDialog,'exec_',new=choose('item:29')):
+            self.window._show_materials('plan:'+today,TASK,'goals')
+        self.assertFalse(self.window.plan_store.load()['days'])
+        self.assertTrue(plan_page.save_changes())
+        self.window.plan_store.day_repository(today)
+        frozen=material.freeze('plan:'+today)
+        plan_page.day=other; plan_page._render()
+        with patch.object(MaterialDialog,'exec_',new=choose('item:80202')):
+            self.window._show_materials('plan:'+other,TASK,'goals')
+        self.assertTrue(plan_page.save_changes())
+        days=self.window.plan_store.load()['days']
+        self.assertEqual([days[d]['routine']['params_by_id'][TASK]['targets'][0]['ref'] for d in (today,other)],
+                         ['item:29','item:80202'])
+        self.assertEqual(self.repo.load_config(),before)
+        self.assertEqual(material.freeze('plan:'+today),frozen)
+        plan_page.day=today; plan_page._render()
+        def inspect_frozen(dialog):
+            self.assertTrue(dialog.read_only)
+            self.assertEqual(dialog.base['targets'][0]['ref'],'item:29')
+            self.assertFalse(dialog.save_targets())
+            return 0
+        with patch.object(MaterialDialog,'exec_',new=inspect_frozen):
+            self.window._show_materials('plan:'+today,TASK,'plan')
 
     def test_frozen_card_keeps_table_access_but_not_parameter_edits(self):
         page=self.window.routineInterface; page.set_busy(True)
@@ -110,7 +193,7 @@ class MaterialUI(TestCase):
         self.dialog.add_target(A,50); self.dialog.save_targets()
         scope='plan:'+PlanStore(self.repo).today()
         self.dialog.scope=scope
-        store=self.dialog.store; snap=store.freeze(scope,scope)
+        store=self.dialog.store; snap=store.for_step(store.freeze(scope,scope),TASK)
         store.observe({'inventory':{A:0},'balance':100,'stages':{'normal:4-1':{'status':'sweepable'}},'source':'game','at':1},snap)
         store.prepare_batch(scope,TASK,'normal:4-1',1,[A])
         self.dialog.refresh_preview()
@@ -130,7 +213,7 @@ class MaterialUI(TestCase):
         from scripts.build_release import material_assets, source_files
         from PyQt5.QtCore import Qt
         items=self.dialog.data['items']; picker=self.picker([A])
-        self.assertEqual(Counter(i['category'] for i in items.values()),{'voucher':48,'equipment':12,'currency':1})
+        self.assertEqual(Counter(i['category'] for i in items.values()),{'voucher':48,'equipment':12,'memory':29,'currency':1})
         self.assertEqual(len(picker.visible_refs),12)
         self.assertTrue(all(items[r]['tier']==2 for r in picker.visible_refs))
         self.assertFalse(picker.rows[A].flags() & Qt.ItemIsEnabled)
@@ -143,7 +226,7 @@ class MaterialUI(TestCase):
         self.assertFalse(picker.add_button.isEnabled())
         picker.choose_category('currency'); self.assertEqual(picker.visible_refs,['goods:1'])
         files=set(material_assets())
-        self.assertEqual(len(files),62)
+        self.assertEqual(len(files),91)
         self.assertIn('gui/material_picker.py',source_files())
         for ref,item in items.items():
             with self.subTest(ref=ref):
@@ -151,6 +234,39 @@ class MaterialUI(TestCase):
                 self.assertTrue((REPO_ROOT/item['icon']).is_file())
                 self.assertFalse(material_icon(item).pixmap(64,72).isNull())
         self.assertIn('来源待实机补验',picker.rows['item:80501'].toolTip())
+
+    def test_memory_picker_and_hard_source_adjustment_keep_existing_goal(self):
+        from PyQt5.QtCore import Qt
+        from PyQt5.QtTest import QTest
+        dialog=self.dialog; dialog.add_target(A,50); self.assertTrue(dialog.save_targets())
+        existing=dialog.store.definitions()['targets'][0]
+        picker=self.picker([A])
+        picker.category_buttons['memory'].click(); self.assertEqual(len(picker.visible_refs),29)
+        picker.search.setText('雫'); self.assertEqual(picker.visible_refs,['item:17'])
+        picker.search.setText('角色碎片 芙蕾雅'); self.assertEqual(picker.visible_refs,['item:29'])
+        row=picker.rows['item:29']
+        QTest.mouseClick(picker.grid.viewport(),Qt.LeftButton,pos=picker.grid.visualItemRect(row).center())
+        self.assertEqual(picker.selection,['item:29'])
+        picker.add_button.click()
+        dialog.add_targets(picker.selection); self.assertTrue(dialog.save_targets())
+        targets=dialog.store.definitions()['targets']
+        self.assertEqual(targets[0],existing)
+        self.assertEqual((targets[1]['amount'],targets[1]['stock_limit_enabled']),(None,False))
+        obs=dict(balance=200,stages={'hard:1-1':dict(status='sweepable',remaining_attempts=1),
+                                    'hard:8-1':dict(status='sweepable',remaining_attempts=3),
+                                    'hard:15-2':dict(status='unavailable')})
+        dialog.store.observe(obs,{'targets':targets})
+        dialog.tabs.setCurrentWidget(dialog.plan_page)
+        self.assertEqual([dialog.preview.item(i,0).text() for i in range(dialog.preview.rowCount())],['HARD 1-1','HARD 8-1'])
+        self.assertFalse(dialog.preview.item(0,0).icon().isNull())
+        self.assertIn('每日最多 3 次',dialog.context.text())
+        dialog.rule_target.setCurrentIndex(1)
+        source=dialog.rule_stage.findData('hard:8-1')
+        self.assertEqual(dialog.rule_stage.itemText(source),'HARD 8-1')
+        self.assertIn('<img',dialog.rule_stage.itemData(source,Qt.ToolTipRole))
+        dialog.rule_stage.setCurrentIndex(source); dialog.rule_cap.setValue(2); dialog.apply_rule.click()
+        self.assertEqual((dialog.preview.rowCount(),dialog.preview.item(0,0).text(),dialog.preview.item(0,3).text()),(1,'HARD 8-1','2'))
+        self.assertIsNone(self.window.worker)
 
     def test_picker_names_fit_and_small_window_can_reach_last_material(self):
         from PyQt5.QtGui import QFontMetrics
@@ -268,7 +384,7 @@ class MaterialUI(TestCase):
         from core.material_planner import plan
         self.dialog.add_target(A); self.dialog.save_targets()
         scope='plan:'+PlanStore(self.repo).today(); self.dialog.scope=scope
-        store=self.dialog.store; snapshot=store.freeze(scope,scope)
+        store=self.dialog.store; snapshot=store.for_step(store.freeze(scope,scope),TASK)
         obs={'inventory':{},'balance':100,'stages':{'normal:4-1':{'status':'sweepable'}},'source':'game','at':1}
         store.observe(obs,snapshot); store.save_allocation(scope,'front',TASK,plan(snapshot,obs,{}))
         batch=store.prepare_batch(scope,TASK,'normal:4-1',6,[A],'front'); store.result_seen(batch,6); store.settle(batch,{})
