@@ -14,6 +14,7 @@ from core.routine_catalog import default_routine, parameter_summary
 from core.game_catalog import stage_options
 from core.config.schedule_fields import format_periods
 from gui.fragments.routine import RoutineFragment
+from gui.motion import ContentFade
 from gui.theme import typography, apply_typography
 
 
@@ -102,6 +103,7 @@ class PlanFragment(QWidget):
         self.use_template=PushButton('使用模板…'); self.use_template.clicked.connect(self._use_template)
         row.addWidget(self.from_daily); row.addWidget(self.use_template); row.addStretch(); e.addLayout(row); e.addStretch()
         self.stack.addWidget(empty); splitter.addWidget(right); splitter.setSizes([240,760]); splitter.setStretchFactor(1,1)
+        self.day_fade=ContentFade(self.stack,theme)
         self.feedback=QLabel(); self.feedback.setWordWrap(True); outer.addWidget(self.feedback)
         foot=QHBoxLayout()
         self.save_button=PushButton('保存排期'); self.save_button.clicked.connect(self._confirm_save)
@@ -170,11 +172,20 @@ class PlanFragment(QWidget):
         self.prev.setEnabled(self.week>self.draft['start']); self.next.setEnabled(end<self.draft['end'])
 
     def _page(self,delta):
-        self.week=self._clamp(shift(self.week,delta)); self.day=self.week; self._render()
+        week=self._clamp(shift(self.week,delta))
+        self._show_week(week,week)
+
+    def _show_week(self,week,day):
+        changed=(week,day)!=(self.week,self.day)
+        self.week,self.day=week,day
+        self._render()
+        if changed: self.day_fade.reveal()
 
     def _select(self,item,previous):
-        if item:
-            self.day=item.data(Qt.UserRole); self._render_day()
+        if item and item.data(Qt.UserRole)!=self.day:
+            self.day=item.data(Qt.UserRole)
+            self._render_day()
+            self.day_fade.reveal()
 
     def _render(self):
         self.week=self._clamp(self.week); self.day=self._clamp(self.day)
@@ -386,7 +397,7 @@ class PlanFragment(QWidget):
         if not chosen: return
         self.draft['end']=max(self.draft['end'],shift(self.week,13))
         for key in chosen: self.copy_to(mapping[key],[key],True)
-        self.week=shift(self.week,7); self.day=chosen[0]; self._render()
+        self._show_week(shift(self.week,7),chosen[0])
 
     def _settings(self):
         dialog=QDialog(self); dialog.setWindowTitle('排期设置')

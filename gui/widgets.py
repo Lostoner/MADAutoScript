@@ -7,10 +7,12 @@ below are retained unchanged, with only their import context extracted.
 from typing import Union
 
 from PyQt5.QtCore import QEvent, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QIcon, QDrag
+from PyQt5.QtGui import QColor, QIcon, QDrag, QPainter
 from PyQt5.QtWidgets import QLabel, QFrame, QHBoxLayout, QVBoxLayout, QToolButton, QMenu, QAction, QApplication, QSizePolicy
 from qfluentwidgets import ExpandSettingCard, FluentIcon as FIF, LineEdit, CheckBox, ListWidget
 from gui.theme import typography
+from gui.motion import Reveal, Transition
+from gui.reorder_feedback import set_drag_badge
 
 
 class FuncLabel(QLabel):
@@ -114,39 +116,60 @@ class CheckableListWidget(ListWidget):
 
 class DragGrip(QToolButton):
     MIME = 'application/x-mad-task'
+    dragEnded = pyqtSignal()
 
-    def __init__(self, task_id, parent):
+    def __init__(self, card, parent):
         super().__init__(parent)
-        self.task_id = task_id
+        self.card, self.task_id = card, card.task_id
+        self.origin = None
         self.setText('⠿')
         self.setFixedSize(24, 30)
         self.setCursor(Qt.OpenHandCursor)
         self.setToolTip('拖动调整顺序；也可右键或 Alt + ↑ / ↓')
 
     def mousePressEvent(self, event):
-        self.origin = event.pos()
+        self.origin = event.pos() if event.button() == Qt.LeftButton else None
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton and (event.pos() - self.origin).manhattanLength() >= QApplication.startDragDistance():
+        if (self.origin is not None and event.buttons() & Qt.LeftButton and
+                (event.pos() - self.origin).manhattanLength() >= QApplication.startDragDistance()):
+            self.origin = None  # Escape ends this press even if the mouse is still held.
             mime = QMimeData()
             mime.setData(self.MIME, self.task_id.encode())
             drag = QDrag(self)
             drag.setMimeData(mime)
-            drag.exec_(Qt.MoveAction)
+            set_drag_badge(drag, self.card.title.text(), self.card.theme)
+            try:
+                drag.exec_(Qt.MoveAction)
+            finally:
+                self.setDown(False)
+                self.dragEnded.emit()
+                drag.deleteLater()
         else:
             super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        if event.button() == Qt.LeftButton:
+            self.origin = None
+            event.accept()  # Releasing a drag grip is never a click on the expandable header.
 
 
 class TaskCard(QFrame):
     """One expandable task row, retaining its instance identity and actions."""
     moveRequested = pyqtSignal(str, int)
     dropRequested = pyqtSignal(str, str, bool)
+    dropHovered = pyqtSignal(str, str, bool)
+    dropLeft = pyqtSignal()
 
     def __init__(self, task_id, title, theme, parent=None):
         super().__init__(parent)
         self.task_id, self.theme = task_id, theme
         self.busy = False
+        self.setProperty('active', False)
+        self._highlight = Transition(self, 180)
+        self._highlight.valueChanged.connect(lambda _: self.update())
         self.setObjectName('taskCard')
         self.setAcceptDrops(True)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -158,7 +181,7 @@ class TaskCard(QFrame):
         row = QHBoxLayout(self.header)
         row.setContentsMargins(12, 12, 12, 12)
         row.setSpacing(12)
-        self.grip = DragGrip(task_id, self.header)
+        self.grip = DragGrip(self, self.header)
         self.check = CheckBox(self.header)
         self.check.setFixedWidth(26)
         self.check.setObjectName(task_id + '.enabled')
@@ -173,7 +196,6 @@ class TaskCard(QFrame):
         self.result = typography(QLabel('', self.header), 'caption')
         self.result.setTextFormat(Qt.PlainText)
         self.expand = QToolButton(self.header)
-        self.expand.setText('⌄')
         self.expand.setCheckable(True)
         self.expand.setFixedSize(32, 32)
         self.expand.setToolTip('展开参数')
@@ -197,8 +219,8 @@ class TaskCard(QFrame):
         self.body = QFrame(self)
         self.body_layout = QVBoxLayout(self.body)
         self.body_layout.setContentsMargins(44, 0, 16, 16)
-        self.body.setVisible(False)
-        outer.addWidget(self.body)
+        self.reveal = Reveal(self.expand, self.body, self)
+        outer.addWidget(self.reveal)
         self.expand.toggled.connect(self.set_expanded)
         for widget in (self.header, self.title, self.summary):
             widget.installEventFilter(self)
@@ -225,13 +247,18 @@ class TaskCard(QFrame):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
             self.expand.toggle()
+            event.accept()
+            return True  # A label's release must not toggle again on its parent header.
         return super().eventFilter(obj, event)
 
     def set_expanded(self, expanded):
-        self.expand.setChecked(expanded)
-        self.expand.setText('⌃' if expanded else '⌄')
-        self.expand.setAccessibleName(self.title.text() + ('收起参数' if expanded else '展开参数'))
-        self.body.setVisible(expanded)
+        if self.expand.isChecked() != expanded:
+            self.expand.setChecked(expanded)  # toggled also covers mouse and keyboard
+            return
+        action = '收起参数' if expanded else '展开参数'
+        self.expand.setAccessibleName(self.title.text() + action)
+        self.expand.setToolTip(action)
+        self.reveal.set_open(expanded)
 
     def keyPressEvent(self, event):
         if self.hasFocus() and event.key() in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
@@ -248,32 +275,70 @@ class TaskCard(QFrame):
         self.body.setEnabled(not busy)
         for action in self.actions_order: action.setEnabled(not busy)
 
+    def _drop_slot(self, event):
+        grip = event.source()
+        if (not self.busy and isinstance(grip, DragGrip) and self.rect().contains(event.pos())
+                and grip.card.parentWidget() is self.parentWidget() and event.mimeData().hasFormat(DragGrip.MIME)):
+            return grip.task_id, self.task_id, event.pos().y() < self.height() / 2
+
+    def dragMoveEvent(self, event):
+        slot = self._drop_slot(event)
+        if slot:
+            self.dropHovered.emit(*slot)
+            event.acceptProposedAction()
+        else:
+            self.dropLeft.emit()
+            event.ignore()
+
     def dragEnterEvent(self, event):
-        if not self.busy and event.mimeData().hasFormat(DragGrip.MIME): event.acceptProposedAction()
+        self.dragMoveEvent(event)
+
+    def dragLeaveEvent(self, event):
+        self.dropLeft.emit()
+        event.accept()
 
     def dropEvent(self, event):
-        if not self.busy and event.mimeData().hasFormat(DragGrip.MIME):
-            source = bytes(event.mimeData().data(DragGrip.MIME)).decode()
-            self.dropRequested.emit(source, self.task_id, event.pos().y() < self.height() / 2)
+        self.dropLeft.emit()
+        slot = self._drop_slot(event)
+        if slot:
+            self.dropRequested.emit(*slot)
             event.acceptProposedAction()
+        else:
+            event.ignore()
 
     def set_result(self, text='', reason='', active=False):
+        if (text, reason, active) == (self.result.text(), self.result.toolTip(), self.property('active')):
+            return
         self.result.setText(text)
         self.result.setToolTip(reason)
         self.setProperty('active', active)
-        self.apply_theme()
+        self._style_result()
+        self._highlight.move_to(active)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        value = self._highlight.currentValue()
+        if value:
+            s = self.theme.surfaces
+            p = QPainter(self)
+            p.setOpacity(value)
+            p.fillRect(3, 0, self.width()-3, self.height()-1, QColor(s['selected']))
+            if not self.hasFocus():
+                p.fillRect(0, 0, 3, self.height()-1, QColor(s['accent']))
 
     def apply_theme(self):
         s, c = self.theme.surfaces, self.theme.colors
-        border = s['accent'] if self.property('active') else 'transparent'
-        bg = s['selected'] if self.property('active') else s['card']
-        self.setStyleSheet(f'QFrame#taskCard {{background:{bg}; border:0; border-left:3px solid {border};border-bottom:1px solid {s["line"]};}} '
+        self.setStyleSheet(f'QFrame#taskCard {{background:{s["card"]}; border:0; border-left:3px solid transparent;border-bottom:1px solid {s["line"]};}} '
                            f'QFrame#taskCard:focus {{border-left-color:{s["focus"]};}} '
                            f'QToolButton {{border:0; background:transparent; color:{s["muted"]}; border-radius:4px;}} '
                            f'QToolButton:hover {{background:{s["selected"]};}} QToolButton:focus {{border:1px solid {s["focus"]};}} '
                            f'QToolButton::menu-indicator {{image:none;}}')
         self.title.setStyleSheet(f'color:{c["text"]};')
         self.summary.setStyleSheet(f'color:{s["muted"]};')
+        self._style_result()
+
+    def _style_result(self):
+        s, c = self.theme.surfaces, self.theme.colors
         color = s['accent'] if self.property('active') else (
             c['text__error'] if self.result.text() in ('未完成', '失败', '需处理') else
             c['text__warning'] if self.result.text().startswith(('有余项', '待续')) else s['muted'])

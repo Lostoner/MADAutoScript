@@ -1,7 +1,7 @@
 """Edit one instruction's goals and inspect its derived sweep plan."""
 from copy import deepcopy
 from datetime import datetime
-from PyQt5.QtCore import Qt, QSize, pyqtSignal, QMimeData
+from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QMimeData
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import (QDialog, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget,
                             QComboBox, QTableWidgetItem, QAbstractItemView,
@@ -14,6 +14,7 @@ from core.plan_store import PlanStore
 from gui.theme import typography, apply_typography
 from gui.widgets import CheckableListWidget
 from gui.material_picker import MaterialPicker, material_icon, material_tooltip
+from gui.reorder_feedback import ReorderFeedback, set_drag_badge
 from gui.selection_thumbnails import decorate_item, prepare_thumbnail_combo, add_thumbnail_choice
 
 
@@ -22,15 +23,21 @@ def stage_label(stage_id):
     return f'{difficulty.upper()} {number}' if difficulty in ('normal','hard') else stage_id
 
 
+class _TargetName(QTableWidgetItem):
+    def __lt__(self, other):
+        return self.rank < other.rank
+
+
 class MaterialTable(TableWidget):
     moved = pyqtSignal(int,int)
     MIME = 'application/x-mad-material-row'
 
     def __init__(self, parent, ordered=False):
         super().__init__(parent)
+        self.reorder_feedback = ReorderFeedback(self,parent.theme,'input') if ordered else None
         if ordered:
             self.setDragEnabled(True); self.setAcceptDrops(True)
-            self.setDragDropMode(QAbstractItemView.DragDrop); self.setDropIndicatorShown(True)
+            self.setDragDropMode(QAbstractItemView.DragDrop); self.setDropIndicatorShown(False)
 
     def fit_name(self):
         others=sum(self.columnWidth(c) for c in range(self.columnCount()) if c!=1 and not self.isColumnHidden(c))
@@ -41,21 +48,61 @@ class MaterialTable(TableWidget):
         self.fit_name()
 
     def startDrag(self, actions):
-        if self.currentRow()<0: return
+        if not self.reorder_feedback or not self.isEnabled() or self.currentRow()<0: return
         mime=QMimeData(); mime.setData(self.MIME,str(self.currentRow()).encode())
-        drag=QDrag(self); drag.setMimeData(mime); drag.exec_(Qt.MoveAction)
+        drag=QDrag(self); drag.setMimeData(mime)
+        item=self.item(self.currentRow(),1)
+        set_drag_badge(drag,item.text(),self.reorder_feedback.theme,item.icon())
+        try: drag.exec_(Qt.MoveAction)
+        finally:
+            self.reorder_feedback.line.hide()
+            drag.deleteLater()
+
+    def _drop_rows(self, event):
+        if (self.reorder_feedback and self.isEnabled() and event.source() is self
+                and self.viewport().rect().contains(event.pos()) and event.mimeData().hasFormat(self.MIME)):
+            source=int(bytes(event.mimeData().data(self.MIME)))
+            row=self.indexAt(event.pos()).row()
+            if 0 <= source < self.rowCount():
+                return source, row if row >= 0 else self.rowCount()-1
+
+    def _row_rect(self, row):
+        return QRect(0,self.rowViewportPosition(row),self.viewport().width(),self.rowHeight(row))
+
+    def apply_order(self, targets):
+        # Native sorting by draft rank moves the existing controls with their material.
+        ranks={t['ref']:i for i,t in enumerate(targets)}
+        for row in range(self.rowCount()):
+            item=self.item(row,1)
+            item.rank=ranks[item.data(Qt.UserRole)]
+        self.sortItems(1,Qt.AscendingOrder)
 
     def dragEnterEvent(self, event):
-        if event.source() is self and event.mimeData().hasFormat(self.MIME): event.acceptProposedAction()
+        self.dragMoveEvent(event)
 
     def dragMoveEvent(self, event):
-        if event.source() is self and event.mimeData().hasFormat(self.MIME): event.acceptProposedAction()
+        rows=self._drop_rows(event)
+        if rows:
+            source,target=rows
+            if source!=target: self.reorder_feedback.mark(self._row_rect(target),source>target)
+            else: self.reorder_feedback.line.hide()
+            event.acceptProposedAction()
+        else:
+            if self.reorder_feedback: self.reorder_feedback.line.hide()
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        if self.reorder_feedback: self.reorder_feedback.line.hide()
+        super().dragLeaveEvent(event)
 
     def dropEvent(self, event):
-        if event.source() is not self or not event.mimeData().hasFormat(self.MIME): return
-        row=self.indexAt(event.pos()).row()
-        if row<0: row=self.rowCount()-1
-        self.moved.emit(int(bytes(event.mimeData().data(self.MIME))),row)
+        if self.reorder_feedback: self.reorder_feedback.line.hide()
+        rows=self._drop_rows(event)
+        if not rows: event.ignore(); return
+        source,target=rows
+        if source!=target:
+            self.moved.emit(source,target)
+            self.reorder_feedback.land(source,target,self._row_rect)
         event.acceptProposedAction()
 
 
@@ -206,7 +253,7 @@ class MaterialDialog(QDialog):
         return targets
 
     def render_targets(self):
-        state = self.store.state(); obs = self.store.preview_observation()
+        self.table.reorder_feedback.clear()
         self.table.setRowCount(len(self.targets))
         self.rule_target.blockSignals(True); self.rule_target.clear()
         for row,t in enumerate(self.targets):
@@ -215,49 +262,44 @@ class MaterialDialog(QDialog):
             check.setAccessibleName('启用'+item['name'])
             check.toggled.connect(self.update_stock_controls)
             self.table.setCellWidget(row,0,check)
-            name = QTableWidgetItem(material_icon(item),item['name'])
+            name = _TargetName(material_icon(item),item['name'])
+            name.rank=row; name.setData(Qt.UserRole,ref)
             name.setToolTip(material_tooltip(item))
             self.table.setItem(row,1,name)
-            owned = obs.get('inventory',{}).get(ref)
-            self.table.setItem(row,2,QTableWidgetItem('待同步' if owned is None else str(owned)))
-            at=obs.get('inventory_at',{}).get(ref,obs.get('at'))
-            if at: self.table.item(row,2).setToolTip('库存观察于 '+datetime.fromtimestamp(at).strftime('%m-%d %H:%M'))
+            for col in (2,4,6): self.table.setItem(row,col,QTableWidgetItem())
             amount = SpinBox(); amount.setRange(0,2147483647); amount.setSpecialValueText('未设置'); amount.setValue(t.get('amount') or 0); amount.setMinimumWidth(140)
             cell=QWidget(); layout=QHBoxLayout(cell); layout.setContentsMargins(0,0,0,0); layout.addWidget(amount)
             self.table.setCellWidget(row,3,cell)
-            gap = QTableWidgetItem('—' if owned is None or not t.get('amount') else str(max(0,t['amount']-owned)))
-            self.table.setItem(row,4,gap)
             amount.valueChanged.connect(self.update_stock_controls)
             condition = CheckBox('达标停止'); condition.setChecked(stock_limited(t))
             condition.setAccessibleName(item['name']+'达到库存后停止')
             self.table.setCellWidget(row,5,condition)
             condition.toggled.connect(self.update_stock_controls)
-            done = stock_complete(t,state['completed'])
-            status = '已暂停' if not t.get('enabled',True) else '按次数分配' if not stock_limited(t) else '重新开启' if t.get('reopen') else '已达成' if done else '待达标'
-            self.table.setItem(row,6,QTableWidgetItem(status))
             self.table.setRowHeight(row,48)
             self.rule_target.addItem(material_icon(item),item['name'],ref)
         self.rule_target.blockSignals(False); self.load_rule()
-        at = obs.get('at')
-        when = datetime.fromtimestamp(at).strftime('%m-%d %H:%M') if at else '尚未同步'
-        manual = ' · 含手工值，执行时重新读取' if obs.get('source')=='manual' else ''
-        self.inventory_note.setText('最近读取游戏数据：'+when+manual+'。仅开启库存条件的素材需要读取库存。')
-        self.review.setVisible(bool(state['pending']))
         self.update_stock_controls()
         apply_typography(self.table)
 
     def update_stock_controls(self):
         flags=[self.table.cellWidget(row,5).isChecked() for row in range(self.table.rowCount())]
-        obs=self.store.preview_observation(); completed=self.store.state()['completed']
+        obs=self.store.preview_observation(); state=self.store.state()
+        at = obs.get('at')
+        when = datetime.fromtimestamp(at).strftime('%m-%d %H:%M') if at else '尚未同步'
+        manual = ' · 含手工值，执行时重新读取' if obs.get('source')=='manual' else ''
+        self.inventory_note.setText('最近读取游戏数据：'+when+manual+'。仅开启库存条件的素材需要读取库存。')
+        self.review.setVisible(bool(state['pending']))
         for col in (2,3,4): self.table.setColumnHidden(col,not any(flags))
         for row,enabled in enumerate(flags):
             target=self.targets[row]; amount=self.amount_box(row).value()
             self.amount_box(row).setVisible(enabled)
             self.amount_box(row).setEnabled(enabled and not self._busy)
             owned=obs.get('inventory',{}).get(target['ref'])
+            observed=obs.get('inventory_at',{}).get(target['ref'],at)
+            self.table.item(row,2).setToolTip('库存观察于 '+datetime.fromtimestamp(observed).strftime('%m-%d %H:%M') if observed else '')
             self.table.item(row,2).setText(('待同步' if owned is None else str(owned)) if enabled else '不读取')
             self.table.item(row,4).setText(str(max(0,amount-owned)) if enabled and owned is not None and amount else '—')
-            done=stock_complete(target,completed) and amount==target.get('amount')
+            done=stock_complete(target,state['completed']) and amount==target.get('amount')
             status=('已暂停' if not self.table.cellWidget(row,0).isChecked() else '按次数分配' if not enabled else
                     '待设置数量' if not amount else '重新开启' if target.get('reopen') else '已达成' if done else '待达标')
             self.table.item(row,6).setText(status)
@@ -265,9 +307,17 @@ class MaterialDialog(QDialog):
         self.table.fit_name()
 
     def move_target(self, source, target):
-        if self._busy or not (0<=source<len(self.targets) and 0<=target<len(self.targets)) or source==target: return
+        if self._busy or self.read_only or not (0<=source<len(self.targets) and 0<=target<len(self.targets)) or source==target: return
+        self.table.reorder_feedback.clear()
         self.targets=self.values(); self.targets.insert(target,self.targets.pop(source))
-        self.render_targets(); self.table.selectRow(target); self.table.scrollToItem(self.table.item(target,1)); self.table.setFocus()
+        self.table.apply_order(self.targets)
+        self.rule_target.blockSignals(True)
+        choices=self.rule_target.model()
+        choices.insertRow(target,choices.takeRow(source))
+        self.rule_target.setCurrentIndex(0)
+        self.rule_target.blockSignals(False); self.load_rule()
+        self.update_stock_controls()
+        self.table.selectRow(target); self.table.scrollToItem(self.table.item(target,1)); self.table.setFocus()
 
     def disable_stock_goals(self):
         if self._busy: return
@@ -438,6 +488,7 @@ class MaterialDialog(QDialog):
 
     def set_busy(self, busy):
         self._busy = busy
+        if busy: self.table.reorder_feedback.clear()
         self.stop_button.setVisible(busy)
         for control in (self.table,self.add,self.remove,self.up,self.down,self.more,self.save_button,self.sync_button):
             control.setEnabled(not busy and not self.read_only)

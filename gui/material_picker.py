@@ -10,6 +10,7 @@ from qfluentwidgets import LineEdit, PushButton, PrimaryPushButton
 
 from core.paths import REPO_ROOT
 from gui.theme import typography, apply_typography, ui_font
+from gui.motion import Transition
 
 CATEGORIES={'voucher':'装备兑换券','equipment':'基础装备','memory':'伙伴记忆','currency':'通用资源'}
 
@@ -33,6 +34,23 @@ class MaterialTileDelegate(QStyledItemDelegate):
     def __init__(self, items, theme, parent):
         super().__init__(parent)
         self.items,self.theme=items,theme
+        self.grid=parent
+        self.fades={}
+
+    def selection_feedback(self, ref, row, selected):
+        rect=self.grid.visualItemRect(row)
+        visible=not row.isHidden() and self.grid.viewport().rect().intersects(rect)
+        fade=self.fades.get(ref)
+        if fade is None:
+            if not visible: return
+            fade=self.fades[ref]=Transition(self.grid.viewport(),150)
+            fade.move_to(not selected,animate=False)
+            fade.valueChanged.connect(lambda _: self.grid.viewport().update(self.grid.visualItemRect(row)))
+        fade.move_to(selected,animate=visible)
+
+    def filter_changed(self):
+        for fade in self.fades.values():
+            if fade.state()==fade.Running: fade.settle()
 
     def paint(self, painter, option, index):
         item=self.items[index.data(Qt.UserRole)]
@@ -42,9 +60,15 @@ class MaterialTileDelegate(QStyledItemDelegate):
         focused=bool(option.state & (QStyle.State_HasFocus|QStyle.State_MouseOver))
         rect=option.rect.adjusted(1,1,-1,-1)
         painter.save(); painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor(s['selected'] if selected else s['card']))
-        painter.setPen(QPen(QColor(s['accent'] if selected or (focused and enabled) else s['line']),2 if selected else 1))
+        painter.setBrush(QColor(s['card']))
+        painter.setPen(QPen(QColor(s['accent'] if focused and enabled else s['line']),1))
         painter.drawRoundedRect(rect,8,8)
+        fade=self.fades.get(index.data(Qt.UserRole))
+        strength=fade.currentValue() if fade and fade.state()==fade.Running else float(selected)
+        if strength:
+            painter.setOpacity(strength)
+            painter.setBrush(QColor(s['selected'])); painter.setPen(QPen(QColor(s['accent']),2))
+            painter.drawRoundedRect(rect,8,8)
         painter.setOpacity(1 if enabled else .45)
         index.data(Qt.DecorationRole).paint(painter,QRect(rect.center().x()-32,rect.top()+5,64,64))
         painter.setOpacity(1)
@@ -54,6 +78,7 @@ class MaterialTileDelegate(QStyledItemDelegate):
                         item['verification']=='public_table_pending_live' else s['muted']))
         painter.drawText(QRect(rect.left()+6,rect.top()+96,rect.width()-12,18),Qt.AlignCenter,index.data(Qt.UserRole+1))
         if selected:
+            painter.setOpacity(.65 + .35 * strength)
             painter.setFont(ui_font(16)); painter.setPen(QColor(s['accent']))
             painter.drawText(QRect(rect.right()-40,rect.top()+5,36,22),Qt.AlignCenter,str(index.data(Qt.UserRole+2) or '✓'))
         painter.restore()
@@ -100,7 +125,9 @@ class MaterialPicker(QDialog):
         self.grid.setWordWrap(True); self.grid.setUniformItemSizes(True)
         self.grid.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.grid.setAccessibleName('素材图标列表，点击或空格切换选择')
-        self.grid.setItemDelegate(MaterialTileDelegate(items,theme,self.grid))
+        self.tiles=MaterialTileDelegate(items,theme,self.grid)
+        self.grid.setItemDelegate(self.tiles)
+        self._filter_key=None
         self.rows={}
         for ref,item in items.items():
             suffix=('已添加' if ref in self.existing else '来源待补验' if item['verification']=='public_table_pending_live'
@@ -156,6 +183,10 @@ class MaterialPicker(QDialog):
     def filter_items(self):
         words=self.search.text().strip().casefold().split()
         searching=bool(words)
+        key=('search',tuple(words)) if searching else (self.category,self.tier if self.category=='voucher' else None)
+        if key==self._filter_key: return
+        self._filter_key=key
+        self.tiles.filter_changed()
         self.category_buttons['all' if searching else self.category].setChecked(True)
         self.tier_buttons[self.tier].setChecked(True)
         for control in (self.tier_label,*self.tier_buttons.values()):
@@ -186,13 +217,17 @@ class MaterialPicker(QDialog):
         selected=[r for r in self.visible_refs if self.rows[r].isSelected() and r not in self.existing]
         self.selection=[r for r in self.selection if r not in visible or r in selected]
         self.selection.extend(r for r in selected if r not in self.selection)
-        self.update_selection_note()
+        self.update_selection_note(feedback=True)
 
-    def update_selection_note(self):
+    def update_selection_note(self, *, feedback=False):
         count=len(self.selection)
         order={ref:i+1 for i,ref in enumerate(self.selection)}
         for ref,row in self.rows.items():
-            row.setData(Qt.UserRole+2,order.get(ref))
+            old,new=row.data(Qt.UserRole+2),order.get(ref)
+            if old==new: continue
+            if feedback and bool(old)!=bool(new):
+                self.tiles.selection_feedback(ref,row,bool(new))
+            row.setData(Qt.UserRole+2,new)
             row.setData(Qt.AccessibleDescriptionRole,'已选第 '+str(order[ref])+' 项' if ref in order else '')
         names=[self.items[r]['name'] for r in self.selection]
         self.selected_note.setText(('已选 '+str(count)+' 项：'+'、'.join(names[:2])+(' 等' if count>2 else '')) if count
@@ -203,7 +238,7 @@ class MaterialPicker(QDialog):
 
     def clear_selection(self):
         self.selection=[]; self.grid.blockSignals(True); self.grid.clearSelection(); self.grid.blockSignals(False)
-        self.update_selection_note()
+        self.update_selection_note(feedback=True)
 
     def accept(self):
         if self.selection: super().accept()

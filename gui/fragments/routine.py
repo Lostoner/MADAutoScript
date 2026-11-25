@@ -1,7 +1,7 @@
 """Task cards edit the existing BAAS-style queue and configuration draft."""
 from copy import deepcopy
 from uuid import uuid4
-from PyQt5.QtCore import pyqtSignal, Qt, QSize
+from PyQt5.QtCore import pyqtSignal, Qt, QSize, QPoint, QRect
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QHeaderView,
                             QDialog, QDialogButtonBox, QComboBox, QInputDialog,
                             QListWidgetItem, QAbstractItemView, QTableWidgetItem)
@@ -14,6 +14,7 @@ from core.material_store import MaterialStore, TASK as MATERIAL_TASK, clean_targ
 from core.game_catalog import stage_options, characters, SHOP_ITEMS
 from core.mad_features import MAP_LOCATIONS
 from gui.widgets import TaskCard, CheckableListWidget
+from gui.reorder_feedback import ReorderFeedback
 from gui.theme import typography, apply_typography
 from gui.run_summary import RESULT_TEXT
 from gui.selection_thumbnails import (decorate_item, prepare_thumbnail_combo,
@@ -392,6 +393,7 @@ class RoutineFragment(ScrollArea):
         if self.definition_mode:
             for control in (self.save_button,self.cancel_button,self.feedback): control.hide()
         self.setWidget(self.scrollWidget)
+        self.reorder_feedback = ReorderFeedback(self, theme, 'page')
         theme.changed.connect(self._apply_theme)
         self._load()
         self._apply_theme()
@@ -513,6 +515,9 @@ class RoutineFragment(ScrollArea):
         self.cards[key] = card
         card.moveRequested.connect(self.move_task)
         card.dropRequested.connect(self.drop_task)
+        card.dropHovered.connect(self._mark_drop)
+        card.dropLeft.connect(self.reorder_feedback.line.hide)
+        card.grip.dragEnded.connect(self.reorder_feedback.line.hide)
         card.check.toggled.connect(lambda enabled: self._toggle(key, enabled))
         if ROUTINES[task].supported:
             card.menu.addSeparator()
@@ -599,8 +604,13 @@ class RoutineFragment(ScrollArea):
                 for action,button in editor.material_buttons.items(): button.setEnabled(action=='plan' or not self._busy)
                 if key in self.follow_choices: self.follow_choices[key].setEnabled(not self._busy)
             card.summary.setText(parameter_summary(task, {task[4:]: self.editors[key].value()}))
+        self._refresh_run_rows()
+
+    def _refresh_run_rows(self):
+        for item in self._queue:
+            key, task = item['instance_id'], item['func_name']
             result, reason = self._results.get(key, ('待适配' if not ROUTINES[task].supported else '', ''))
-            card.set_result(result, reason, key == self._active)
+            self.cards[key].set_result(result, reason, key == self._active)
         saved_ids = {e['instance_id'] for e in self.base_events}
         for key, selector in self.sweep_selectors.items():
             selector.set_remaining(self.base_config['unfinished_tasks'].get(key, []), new_instance=key not in saved_ids)
@@ -618,13 +628,31 @@ class RoutineFragment(ScrollArea):
             self._queue[index], self._queue[target] = self._queue[target], self._queue[index]
             self._reorder()
 
+    def _drop_indices(self, source, target, before):
+        if self._busy or source == target or source not in self.cards or target not in self.cards: return
+        old = self._queue.index(self._event(source))
+        boundary = self._queue.index(self._event(target)) + (not before)
+        new = boundary - (old < boundary)
+        if old != new: return old, new
+
+    def _card_rect(self, key):
+        card = self.cards[key]
+        return QRect(card.mapTo(self.viewport(), QPoint()), card.size())
+
+    def _mark_drop(self, source, target, before):
+        if self._drop_indices(source, target, before):
+            self.reorder_feedback.mark(self._card_rect(target), before)
+        else:
+            self.reorder_feedback.line.hide()
+
     def drop_task(self, source, target, before):
-        if self._busy or source == target or source not in self.cards: return
-        item = self._event(source)
-        self._queue.remove(item)
-        index = self._queue.index(self._event(target))
-        self._queue.insert(index + (not before), item)
+        indices = self._drop_indices(source, target, before)
+        if not indices: return
+        old, new = indices
+        self._queue.insert(new, self._queue.pop(old))
         self._reorder()
+        self.card_layout.activate()
+        self.reorder_feedback.land(old, new, lambda i: self._card_rect(self._queue[i]['instance_id']))
 
     def _reorder(self):
         for index, item in enumerate(self._queue): self.card_layout.insertWidget(index, self.cards[item['instance_id']])
@@ -650,6 +678,7 @@ class RoutineFragment(ScrollArea):
 
     def _changed(self, *_):
         if self._loading: return
+        self.reorder_feedback.clear()
         self._refresh_rows()
         dirty = self.has_unsaved_changes()
         self.save_button.setEnabled(dirty and not self._busy)
@@ -688,6 +717,7 @@ class RoutineFragment(ScrollArea):
             self._load()
 
     def set_busy(self, busy):
+        if self._busy == busy: return
         self._busy = busy
         self._changed()
 
@@ -702,7 +732,13 @@ class RoutineFragment(ScrollArea):
         if kind == 'task' and event.get('task_id') in ROUTINES:
             task = event.get('instance_id', event['task_id'])
             state = event.get('state')
-            self._active = task if state == 'running' else None
+            if state == 'running':
+                if self._active and self._active != task:
+                    # A handoff is not a success receipt. Drop only the previous live label.
+                    self._results.pop(self._active, None)
+                self._active = task
+            elif task == self._active:
+                self._active = None
             self.base_config['unfinished_tasks'] = self.repository.load_config()['unfinished_tasks']
             text = {'running': '执行中', 'succeeded': '已完成', 'skipped': '已跳过', 'partial': '有余项', 'needs_attention': '需处理', 'failed': '未完成', 'stopped': '已停止'}.get(state, '')
             text = RESULT_TEXT.get(event.get('result'), text)
@@ -729,7 +765,7 @@ class RoutineFragment(ScrollArea):
             self._results.clear()
             self._active = None
         else: return
-        self._refresh_rows()
+        self._refresh_run_rows()
 
     def _apply_theme(self):
         self.theme.apply_scroll_surface(self, self.scrollWidget)

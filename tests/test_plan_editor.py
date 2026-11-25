@@ -88,6 +88,55 @@ class PlanEditorTests(TestCase):
         self.assertTrue(p.save_changes(),p.feedback.text())
         self.assertEqual(self.store.load()['end'],'2026-11-17')
 
+    def test_rapid_day_and_week_navigation_only_fades_the_live_schedule(self):
+        from copy import deepcopy
+        from unittest.mock import patch
+        from PyQt5.QtCore import QPoint,Qt
+        from PyQt5.QtTest import QTest
+        from gui.fragments.plan import shift
+        p=self.page; first=p.day; tomorrow=shift(first,1); next_week=shift(first,7)
+        p.use_daily(); p.draft['end']=shift(first,13)
+        p.copy_to(first,[tomorrow,next_week])
+        p.draft['days'][tomorrow]['name']='第二天'
+        p.draft['days'][next_week]['name']='下一周'
+        self.assertTrue(p.save_changes())
+        original=deepcopy(self.store.load())
+        fade=p.day_fade
+        nav=p.days.mapTo(p,QPoint()); footer=p.save_button.mapTo(p,QPoint())
+        def click_day(i):
+            QTest.mouseClick(p.days.viewport(),Qt.LeftButton,pos=p.days.visualItemRect(p.days.item(i)).center())
+        with patch('gui.motion._system_animates',return_value=True):
+            click_day(1)
+            self.assertEqual((p.day,p.name.text()),(tomorrow,'第二天'))
+            self.assertIs(fade.parentWidget(),p.stack)
+            self.assertTrue(fade.isVisible() and fade.testAttribute(Qt.WA_TransparentForMouseEvents))
+            fade.motion.setCurrentTime(70)
+            mid=fade.motion.currentValue()
+            QTest.keyClick(p.days,Qt.Key_Down)
+            self.assertEqual((p.day,p.stack.currentIndex()),(shift(first,2),0))
+            self.assertGreaterEqual(fade.motion.currentValue(),mid)
+            for button in (p.next,p.prev,p.next): QTest.mouseClick(button,Qt.LeftButton,delay=0)
+            self.assertEqual((p.day,p.name.text(),p.days.currentItem().data(Qt.UserRole)),
+                             (next_week,'下一周',next_week))
+            self.assertEqual((p.days.mapTo(p,QPoint()),p.save_button.mapTo(p,QPoint())),(nav,footer))
+            check=p.editor.cards['mad.stamina_claim'].check
+            point=check.mapTo(p,check.rect().center())
+            hit=p.childAt(point)
+            self.assertTrue(hit is check or check.isAncestorOf(hit))
+            QTest.mouseClick(hit,Qt.LeftButton,pos=hit.mapFrom(p,point))
+            self.assertNotEqual(p.draft['days'][next_week],original['days'][next_week])
+            self.assertEqual(p.draft['days'][first],original['days'][first])
+            self.assertEqual(p.draft['days'][tomorrow],original['days'][tomorrow])
+            self.assertEqual(self.store.load(),original)
+            QTest.qWait(240)
+            click_day(0); p.set_runtime_status(first,'stopped','测试记录'); p.refresh()
+            self.assertTrue(fade.isHidden())
+        with patch('gui.motion._system_animates',return_value=False):
+            QTest.mouseClick(p.prev,Qt.LeftButton)
+            self.assertEqual(p.day,first); self.assertTrue(fade.isHidden())
+        self.assertTrue(p.save_changes())
+        self.assertEqual(self.store.load()['days'][next_week],p.draft['days'][next_week])
+
     def test_history_without_a_status_and_frozen_remaining_preview(self):
         from PyQt5.QtCore import QTimer
         from PyQt5.QtWidgets import QApplication,QTabWidget,QTextEdit

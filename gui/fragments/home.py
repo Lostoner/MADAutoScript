@@ -8,9 +8,11 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel, QVBoxLay
                             QSplitter, QMenu, QToolButton, QComboBox, QScrollArea, QSizePolicy)
 from qfluentwidgets import PrimaryPushButton, PushButton, TextEdit
 from gui.theme import typography, apply_typography
+from gui.motion import Reveal
 from gui.run_summary import STATE_TEXT, brief_error, result_title, result_lines
 
 ACTIVE_STATES = {'starting', 'running', 'waiting', 'stopping'}
+SPLITTER_GAP = 24
 
 
 class HomeFragment(QFrame):
@@ -77,14 +79,15 @@ class HomeFragment(QFrame):
         compact.addWidget(self.compact_status, 1)
         self.details_toggle = PushButton('运行详情', self.compact_bar)
         self.details_toggle.setCheckable(True)
-        self.details_toggle.toggled.connect(lambda checked: self.side.setVisible(checked or not self._compact))
+        self.details_toggle.setMinimumWidth(self.details_toggle.sizeHint().width() + 44)
+        self.details_toggle.toggled.connect(self._toggle_details)
         compact.addWidget(self.details_toggle)
         self.compact_actions = compact
         self.compact_bar.hide()
         layout.addWidget(self.compact_bar)
         self.splitter = QSplitter(Qt.Horizontal, self)
         self.splitter.setChildrenCollapsible(False)
-        self.splitter.setHandleWidth(24)
+        self.splitter.setHandleWidth(SPLITTER_GAP)
         self.left = QFrame(self.splitter)
         self.left.setMinimumWidth(520)
         left = QVBoxLayout(self.left)
@@ -98,7 +101,7 @@ class HomeFragment(QFrame):
         footer.addWidget(routine.cancel_button)
         footer.addWidget(routine.feedback, 1)
         left.addLayout(footer)
-        self.side = QFrame(self.splitter)
+        self.side = QFrame(self)
         self.side.setObjectName('runPanel')
         self.side.setMinimumWidth(300)
         side = QVBoxLayout(self.side)
@@ -129,13 +132,12 @@ class HomeFragment(QFrame):
         info.addWidget(self.recovery_button)
         self.device_label = self._label('开始时连接 MuMu 实例 0', 'caption')
         info.addWidget(self.device_label)
-        self.log_toggle = PushButton('执行详情与日志  ⌄', self.run_content)
+        self.log_toggle = PushButton('执行详情与日志', self.run_content)
         self.log_toggle.setCheckable(True)
         self.log_toggle.toggled.connect(self._toggle_logs)
-        info.addWidget(self.log_toggle)
         self.log_panel = QFrame(self.run_content)
         logs = QVBoxLayout(self.log_panel)
-        logs.setContentsMargins(0, 0, 0, 0)
+        logs.setContentsMargins(0, info.spacing(), 0, 0)
         self.result_detail = self._label('', 'caption')
         self.result_detail.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         logs.addWidget(self.result_detail)
@@ -161,23 +163,20 @@ class HomeFragment(QFrame):
         self.latest_button.clicked.connect(self._latest_log)
         self.latest_button.hide()
         logs.addWidget(self.latest_button)
-        self.log_panel.hide()
-        info.addWidget(self.log_panel)
-        self.preview_toggle = PushButton('最近画面  ⌄', self.run_content)
+        self.log_reveal = self._disclosure(info, self.log_toggle, self.log_panel)
+        self.preview_toggle = PushButton('最近画面', self.run_content)
         self.preview_toggle.setCheckable(True)
         self.preview_toggle.toggled.connect(self._toggle_preview)
-        info.addWidget(self.preview_toggle)
         self.preview_body = QFrame(self.run_content)
         preview = QVBoxLayout(self.preview_body)
-        preview.setContentsMargins(0, 0, 0, 0)
+        preview.setContentsMargins(0, info.spacing(), 0, 0)
         self.preview_image = self._label('运行后显示最近截图', 'caption')
         self.preview_image.setAlignment(Qt.AlignCenter)
         self.preview_image.setFixedHeight(146)
         preview.addWidget(self.preview_image)
         self.preview_time = self._label('尚无截图', 'caption')
         preview.addWidget(self.preview_time)
-        self.preview_body.hide()
-        info.addWidget(self.preview_body)
+        self.preview_reveal = self._disclosure(info, self.preview_toggle, self.preview_body)
         info.addStretch()
         self.run_scroll.setWidget(self.run_content)
         side.addWidget(self.run_scroll, 1)
@@ -200,6 +199,11 @@ class HomeFragment(QFrame):
         self.more_button.setMenu(menu)
         self.run_actions.addWidget(self.more_button)
         side.addLayout(self.run_actions)
+        self._detail_height = 220
+        self.side_reveal = Reveal(self.details_toggle, self.side, self.splitter)
+        self.splitter.addWidget(self.side_reveal)
+        self.side_reveal.motion.valueChanged.connect(self._size_compact_details)
+        self.side_reveal.set_open(True, animate=False)
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 0)
         self.splitter.setSizes([724, 300])
@@ -259,6 +263,7 @@ class HomeFragment(QFrame):
             ('\n' + self.reason_label.text() if self._compact and self.reason_label.text() else ''))
 
     def set_recovery(self, kind=''):
+        if self._recovery == kind: return
         self._recovery = kind
         self._render_summary()
 
@@ -277,6 +282,7 @@ class HomeFragment(QFrame):
 
     def on_runtime_event(self, event, tasks=None):
         kind = event['kind']
+        context = self._source, self._plan_date
         if event.get('plan_date'):
             if self._plan_date != event['plan_date']: self.begin_run('今日计划 · ' + event['plan_date'], event['plan_date'])
         elif event.get('material_sync') and self._source != '同步素材数据':
@@ -287,10 +293,14 @@ class HomeFragment(QFrame):
                       '持续运行' if self._source == '持续运行' else '普通日常')
             self.begin_run(source, event.get('plan_date'))
         elif kind == 'task':
+            key = event.get('instance_id', event.get('task_id'))
             if event.get('state') == 'running':
-                self._current_id = event.get('instance_id', event.get('task_id'))
-                self._current_name = event.get('event_name') or event.get('message') or self._current_id
+                name = event.get('event_name') or event.get('message') or key
+                if (key, name, '') == (self._current_id, self._current_name, self._error): return
+                self._current_id, self._current_name = key, name
                 self._error = ''
+            elif key and self._current_id and key != self._current_id:
+                return  # The receipt belongs to another row, not the current task summary.
             else: self._error = event.get('message', '')
         elif kind == 'result':
             self._result = dict(event['result'])
@@ -301,6 +311,8 @@ class HomeFragment(QFrame):
                 if issue:
                     self._current_id = issue.get('instance_id', issue.get('task_id'))
                     self._current_name = issue.get('event_name') or self._current_id
+        elif context == (self._source, self._plan_date):
+            return  # Logs and cached frames do not change the execution summary.
         self._render_summary()
 
     def show_error(self, error):
@@ -350,9 +362,17 @@ class HomeFragment(QFrame):
             self.device_label.setText(f'MuMu {device["instance_id"]} · ONEstore MAD · 已连接')
             self.device_label.setToolTip(device['serial'])
 
+    def _disclosure(self, layout, button, body):
+        group = QVBoxLayout()
+        group.setSpacing(0)
+        group.addWidget(button)
+        reveal = Reveal(button, body, self.run_content)
+        group.addWidget(reveal)
+        layout.addLayout(group)
+        return reveal
+
     def _toggle_logs(self, checked):
-        self.log_panel.setVisible(checked)
-        self.log_toggle.setText('执行详情与日志  ' + ('⌃' if checked else '⌄'))
+        self.log_reveal.set_open(checked)
 
     def _copy_logs(self):
         QApplication.clipboard().setText('\n'.join(f'{t} {level} {message}' for t, level, message, _ in self.entries))
@@ -363,8 +383,7 @@ class HomeFragment(QFrame):
         self.latest_button.hide()
 
     def _toggle_preview(self, checked):
-        self.preview_body.setVisible(checked)
-        self.preview_toggle.setText('最近画面  ' + ('⌃' if checked else '⌄'))
+        self.preview_reveal.set_open(checked)
         if checked: self.previewRequested.emit()
 
     def show_frame(self, frame, captured_at):
@@ -376,9 +395,26 @@ class HomeFragment(QFrame):
     def _scale_preview(self):
         if self._pixmap: self.preview_image.setPixmap(self._pixmap.scaled(self.preview_image.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
+    def _toggle_details(self, checked):
+        if not self._compact: return
+        pane = self.side_reveal
+        if not checked and pane.motion.state() != pane.motion.Running:
+            self._detail_height = pane.height()  # keep the user's splitter position
+        available = self.splitter.height() - SPLITTER_GAP - self.left.minimumSizeHint().height()
+        pane.set_open(checked, extent=max(0, min(self._detail_height, available)))
+        self._size_compact_details(pane.motion.currentValue())
+
+    def _size_compact_details(self, value):
+        if not self._compact: return
+        gap = round(SPLITTER_GAP * value)
+        self.splitter.setHandleWidth(gap)
+        if not self.side_reveal.isHidden():
+            height = round(value * self.side_reveal.extent)
+            self.splitter.setSizes([self.splitter.height() - gap - height, height])
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if not hasattr(self, 'routine_button'): return
+        if not hasattr(self, 'side_reveal'): return
         compact = self.width() < 980
         if compact != self._compact:
             self._compact = compact
@@ -389,7 +425,8 @@ class HomeFragment(QFrame):
             target.addWidget(self.routine_button)
             target.addWidget(self.more_button)
             self.compact_bar.setVisible(compact)
-            self.side.setVisible(not compact or self.details_toggle.isChecked())
+            self.side_reveal.set_open(not compact or self.details_toggle.isChecked(), animate=False)
+            self.splitter.setHandleWidth(SPLITTER_GAP if not compact or self.details_toggle.isChecked() else 0)
             self.splitter.setSizes([320, 220] if compact else [724, 300])
             self._buttons()
         self._scale_preview()

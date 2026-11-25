@@ -241,3 +241,118 @@ class DailyWorkspaceStageA(TestCase):
         self.h.show_error('未找到 NORMAL 5-1')
         self.h.set_state('failed')
         self.assertIn('未找到 NORMAL 5-1', self.h.compact_status.text())
+
+    @patch('gui.motion.motion_allowed', return_value=True)
+    def test_disclosures_reverse_from_current_frame_and_leave_the_last_click_in_control(self, _):
+        h, p = self.h, self.p
+        card = p.cards['mad.normal_sweep']
+        before = self.repo.load_config()
+        preview = Mock()
+        h.previewRequested.connect(preview)
+        QTest.mouseClick(card.title, Qt.LeftButton)
+        self.assertTrue(card.expand.isChecked())
+        QTest.mouseClick(card.summary, Qt.LeftButton)
+        self.assertFalse(card.expand.isChecked())
+        for toggle, pane in ((card.expand, card.reveal), (h.log_toggle, h.log_reveal),
+                             (h.preview_toggle, h.preview_reveal)):
+            with self.subTest(button=toggle.accessibleName() or toggle.text()):
+                origin = toggle.mapTo(self.w, QPoint())
+                primary = h.routine_button.mapTo(self.w, QPoint())
+                def click(): QTest.mouseClick(toggle, Qt.LeftButton, delay=0)
+                click()
+                # Sample a specific animation frame so this also works on slow CI.
+                pane.motion.setCurrentTime(80)
+                self.app.processEvents()
+                mid = pane.motion.currentValue()
+                self.assertLess(0, pane.height())
+                self.assertLess(pane.height(), pane.content.height())
+                self.assertEqual(toggle.mapTo(self.w, QPoint()), origin)
+                click()
+                self.assertFalse(toggle.isChecked())
+                self.assertEqual(pane.motion.currentValue(), mid)
+                self.assertEqual(pane.motion.direction(), pane.motion.Backward)
+                for _ in range(5): click()
+                QTest.qWait(pane.motion.duration()+50)
+                self.assertTrue(toggle.isChecked() and pane.content.isVisible())
+                self.assertEqual(pane.height(), pane.content.height())
+                self.assertEqual(h.routine_button.mapTo(self.w, QPoint()), primary)
+                click()
+                QTest.qWait(pane.motion.duration()+50)
+                self.assertTrue(pane.isHidden() and pane.content.isHidden())
+        self.assertEqual(preview.call_count, 4)  # existing cache request on each actual open
+        self.assertFalse(p.has_unsaved_changes())
+        self.assertEqual(self.repo.load_config(), before)
+        self.assertIsNone(self.w.worker)
+
+    def test_compact_details_restore_and_reduced_motion(self):
+        h = self.h
+        self.w._fit_initial_size(QRect(0,0,800,600))
+        self.app.processEvents()
+        pane = h.side_reveal
+        primary = h.routine_button.mapTo(self.w, QPoint())
+        closed_height = h.left.height()
+        with patch('gui.motion.motion_allowed', return_value=True):
+            QTest.mouseClick(h.details_toggle, Qt.LeftButton)
+            pane.motion.setCurrentTime(90)
+            self.app.processEvents()
+            self.assertTrue(0 < pane.height() < pane.extent)
+            self.assertTrue(closed_height-pane.extent < h.left.height() < closed_height)
+            self.assertEqual(h.routine_button.mapTo(self.w, QPoint()), primary)
+            self.w.hide()
+            self.w.show()
+            self.app.processEvents()
+            self.assertEqual(pane.motion.state(), pane.motion.Stopped)
+            self.assertTrue(h.details_toggle.isChecked() and h.side.isVisible())
+        with patch('gui.motion.motion_allowed', return_value=False):
+            QTest.mouseClick(h.details_toggle, Qt.LeftButton)
+            self.assertTrue(h.side.isHidden())
+            QTest.keyClick(h.details_toggle, Qt.Key_Space)
+            self.assertTrue(h.side.isVisible())
+            self.assertEqual(pane.motion.currentValue(), 1)
+            self.assertEqual(h.routine_button.mapTo(self.w, QPoint()), primary)
+            QTest.mouseClick(h.log_toggle, Qt.LeftButton)
+            self.assertTrue(h.logger_box.isVisible())
+            self.assertEqual(h.log_reveal.motion.state(), pane.motion.Stopped)
+
+    @patch('gui.motion.motion_allowed', return_value=True)
+    def test_run_handoff_uses_instance_and_logs_do_not_restart_feedback(self, _):
+        p, h = self.p, self.h
+        base = 'mad.normal_sweep'
+        tail = p.add_instance(base, base)
+        p.rename_instance(tail, '尾扫')
+        p.cards[tail].set_expanded(False)
+        p.drop_task(tail, base, False)
+        self.assertTrue(p.save_changes())
+        p.ensureWidgetVisible(p.cards[base])
+        before = self.repo.load_config()
+        self.event('state', state='running')
+        def running(key):
+            self.event('task', state='running', task_id=base, instance_id=key, event_name=p.cards[key].title.text())
+        running(base)
+        old = p.cards[base]._highlight
+        old.setCurrentTime(75)
+        mid = old.currentValue()
+        running(tail)
+        self.assertEqual((old.currentValue(), old.direction()), (mid, old.Backward))
+        self.assertFalse(p.cards[base].property('active'))
+        self.assertNotEqual(p.cards[base].result.text(), '执行中')
+        self.assertTrue(p.cards[tail].property('active'))
+        self.assertEqual(h.current_label.text(), '尾扫')
+        new = p.cards[tail]._highlight
+        new.setCurrentTime(55)
+        with patch.object(h, '_render_summary', wraps=h._render_summary) as render:
+            for i in range(6): self.event('log', level='INFO', message=f'步骤 {i}')
+            running(tail)
+            render.assert_not_called()
+        self.assertEqual(new.currentTime(), 55)
+        self.event('task', state='partial', task_id=base, instance_id=base, message='首扫有余项')
+        self.assertTrue(p.cards[tail].property('active'))
+        self.assertTrue(p.cards[base].result.text().startswith('有余项'))
+        self.assertNotIn('首扫有余项', h.reason_label.text())
+        running(base)
+        self.event('result', state='failed', result={'error':'关卡未找到', 'tasks':[]})
+        self.assertEqual((h.reason_label.text(), h.routine_button.text()), ('关卡未找到', '继续本轮'))
+        self.assertEqual(p.cards[base].result.text(), '未完成')
+        QTest.qWait(230)
+        self.assertEqual((old.currentValue(), new.currentValue()), (0, 0))
+        self.assertEqual(self.repo.load_config(), before)

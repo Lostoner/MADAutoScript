@@ -310,6 +310,45 @@ class MaterialUI(TestCase):
         picker.clear_button.click(); self.assertEqual(picker.selection,[])
         self.assertFalse(picker.add_button.isEnabled())
 
+    @patch('gui.motion.motion_allowed', return_value=True)
+    def test_picker_repeated_category_keeps_scroll_and_selection_reverses_locally(self, _):
+        from PyQt5.QtCore import Qt
+        from PyQt5.QtTest import QTest
+        picker=self.picker()
+        picker.resize(760,540)
+        def tap(widget): QTest.mouseClick(widget,Qt.LeftButton,delay=0)
+        def select(row):
+            QTest.mouseClick(picker.grid.viewport(),Qt.LeftButton,pos=picker.grid.visualItemRect(row).center(),delay=0)
+        select(picker.rows[A])
+        category=picker.category_buttons['memory']
+        tap(category); self.app.processEvents()
+        bar=picker.grid.verticalScrollBar()
+        bar.setValue(bar.maximum()); position=bar.value()
+        self.assertGreater(position,0)
+        ref=picker.visible_refs[-1]; row=picker.rows[ref]
+        select(row)
+        fade=picker.tiles.fades[ref]; fade.setCurrentTime(60)
+        mid=fade.currentValue()
+        self.assertTrue(0 < mid < 1)
+        for _ in range(3): tap(category)
+        self.assertEqual((bar.value(),fade.currentValue()),(position,mid))
+        self.assertEqual(picker.selection,[A,ref])
+        select(row)
+        self.assertEqual((fade.currentValue(),fade.direction()),(mid,fade.Backward))
+        self.assertEqual((picker.selection,picker.add_button.text()),([A],'添加 1 项'))
+        for _ in range(5): select(row)
+        self.assertEqual((picker.selection,row.data(Qt.UserRole+2)),([A,ref],2))
+        QTest.qWait(200)
+        self.assertEqual((fade.currentValue(),bar.value()),(1,position))
+        self.assertEqual(set(picker.tiles.fades),{A,ref})
+        # Searching still spans categories; choosing a different category clears the search.
+        picker.search.setText('信用点')
+        self.assertEqual(picker.visible_refs,['goods:1'])
+        tap(picker.category_buttons['voucher'])
+        self.assertEqual(picker.search.text(),'')
+        self.assertEqual(bar.value(),0)
+        self.assertEqual(picker.selection,[A,ref])
+
     def test_picker_batch_add_cancel_and_existing_draft_preservation(self):
         from PyQt5.QtCore import QTimer
         from PyQt5.QtWidgets import QApplication
